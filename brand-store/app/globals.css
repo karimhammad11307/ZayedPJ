@@ -1,0 +1,192 @@
+/* ============================================================
+   Google Fonts
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ============================================================
+   Tailwind Directives
+   ============================================================ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   CSS Custom Properties (Design Tokens)
+   ============================================================ */
+:root {
+  /* Brand Colors */
+  --cream:        #F5F0E8;
+  --cream-light:  #FAFAF8;
+  --mint-soft:    #F0F7F4;
+  --mint:         #4A9B7F;
+  --forest:       #1E4D3A;
+  --terracotta:   #C94B2C;
+  --blush:        #E8B4A0;
+  --mustard:      #E8A820;
+  --brown:        #2C1810;
+  --brown-muted:  #6B5B4E;
+
+  /* Typography */
+  --font-heading: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Inter', sans-serif;
+
+  /* Spacing */
+  --radius-card: 14px;
+  --radius-btn:  14px;
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--brown);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  /* ── Grain texture overlay (3 % opacity) ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--brown);
+    line-height: 1.2;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
+  }
+}
+
+/* ============================================================
+   Component Classes
+   ============================================================ */
+@layer components {
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-mint text-white font-body font-medium text-sm
+           px-6 py-3 rounded-btn transition-all duration-200
+           hover:bg-forest hover:shadow-card-hover
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mint
+           active:scale-[0.97] select-none;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2
+           bg-cream text-mint border border-mint font-body font-medium text-sm
+           px-6 py-3 rounded-btn transition-all duration-200
+           hover:bg-mint hover:text-white
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mint
+           active:scale-[0.97] select-none;
+  }
+
+  /* ── Headings ── */
+  .heading-editorial {
+    @apply font-heading font-light italic text-brown leading-tight;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-cream-light rounded-card shadow-card
+           transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  /* ── Labels ── */
+  .label-caps {
+    @apply font-body text-xs font-medium uppercase tracking-widest text-brown-muted;
+  }
+
+  /* ── Marquee ── */
+  .marquee-container {
+    @apply overflow-hidden whitespace-nowrap w-full;
+  }
+
+  .marquee-track {
+    display: inline-flex;
+    animation: marquee 28s linear infinite;
+    will-change: transform;
+  }
+
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* ============================================================
+   Keyframe Animations (also defined in tailwind.config.ts)
+   ============================================================ */
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fade-in {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  0%   { opacity: 0; transform: translateX(24px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
+   Stripe Section Divider  (forest + cream vertical stripes)
+   ============================================================ */
+.stripe-divider {
+  height: 12px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--forest)  0px,
+    var(--forest)  16px,
+    var(--cream)   16px,
+    var(--cream)   32px
+  );
+}
+
+/* ============================================================
+   Scrollbar Styling (subtle, brand-colored)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mint);
+  border-radius: 99px;
+}
