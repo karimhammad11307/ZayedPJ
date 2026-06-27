@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, MessageCircle } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, Trash2, AlertTriangle, X } from 'lucide-react'
 
 import AdminLayout from '@/components/admin/AdminLayout'
 import { buildWhatsAppURL } from '@/lib/whatsapp'
@@ -10,10 +10,10 @@ const STATUSES = ['All', 'pending', 'confirmed', 'shipped', 'delivered'] as cons
 type TabStatus = typeof STATUSES[number]
 
 const STATUS_BADGE = {
-  pending:   'bg-mustard/20 text-mustard',
-  confirmed: 'bg-mint/20 text-mint',
-  shipped:   'bg-forest/20 text-forest',
-  delivered: 'bg-brown/20 text-brown',
+  pending:   'bg-mustard text-brown',
+  confirmed: 'bg-mint text-white',
+  shipped:   'bg-terracotta text-white',
+  delivered: 'bg-forest text-cream',
 } as const
 
 export default function AdminOrdersPage() {
@@ -22,6 +22,7 @@ export default function AdminOrdersPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>('All')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -61,6 +62,25 @@ export default function AdminOrdersPage() {
     }
   }
 
+  async function confirmDeleteOrder() {
+    if (!orderToDelete) return
+    const orderId = orderToDelete
+    setOrderToDelete(null)
+
+    const previousOrders = [...orders]
+    setOrders(orders.filter(o => o._id !== orderId))
+    
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Delete failed')
+    } catch (err) {
+      setOrders(previousOrders)
+      alert('Failed to delete order')
+    }
+  }
+
   const filteredOrders = activeTab === 'All' 
     ? orders 
     : orders.filter(o => o.status === activeTab)
@@ -81,10 +101,11 @@ export default function AdminOrdersPage() {
           const isActive = activeTab === status
           let activeClass = 'bg-brown text-white'
           if (isActive) {
-            if (status === 'All') activeClass = 'bg-forest text-cream'
-            if (status === 'pending') activeClass = 'bg-mustard text-white'
-            if (status === 'confirmed' || status === 'shipped') activeClass = 'bg-mint text-white'
-            if (status === 'delivered') activeClass = 'bg-brown text-cream'
+            if (status === 'All')       activeClass = 'bg-forest text-cream'
+            if (status === 'pending')   activeClass = 'bg-mustard text-brown'
+            if (status === 'confirmed') activeClass = 'bg-mint text-white'
+            if (status === 'shipped')   activeClass = 'bg-terracotta text-white'
+            if (status === 'delivered') activeClass = 'bg-forest-dark text-cream'
           }
 
           return (
@@ -145,7 +166,7 @@ export default function AdminOrdersPage() {
                     <div className="font-body font-medium text-brown">{order.customerName}</div>
                     <div className="text-brown-muted text-sm">{order.phone}</div>
                     <div className="text-brown-muted text-sm">{order.items?.length || 0} items</div>
-                    <div className="font-heading italic text-lg text-mint">EGP {order.total?.toLocaleString('en-EG')}</div>
+                    <div className="font-heading italic text-lg text-terracotta">EGP {order.total?.toLocaleString('en-EG')}</div>
                     
                     <div>
                       <span className={`rounded-full px-3 py-1 text-xs font-body capitalize ${badgeClass}`}>
@@ -158,33 +179,27 @@ export default function AdminOrdersPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      {statusKey === 'pending' && (
-                        <button 
-                          onClick={() => updateOrderStatus(order._id, 'confirmed')}
-                          className="bg-mint text-white px-3 py-1.5 rounded-btn text-xs font-body hover:bg-mint/90 transition-colors"
-                        >
-                          Confirm
-                        </button>
-                      )}
-                      {statusKey === 'confirmed' && (
-                        <button 
-                          onClick={() => updateOrderStatus(order._id, 'shipped')}
-                          className="bg-forest text-white px-3 py-1.5 rounded-btn text-xs font-body hover:bg-forest/90 transition-colors"
-                        >
-                          Mark Shipped
-                        </button>
-                      )}
-                      {statusKey === 'shipped' && (
-                        <button 
-                          onClick={() => updateOrderStatus(order._id, 'delivered')}
-                          className="bg-brown text-white px-3 py-1.5 rounded-btn text-xs font-body hover:bg-brown/90 transition-colors"
-                        >
-                          Mark Delivered
-                        </button>
-                      )}
+                    <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                      <select 
+                        value={statusKey}
+                        onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                        className={`text-xs font-body px-2 py-1.5 rounded-btn border border-transparent outline-none focus:ring-1 cursor-pointer transition-colors ${badgeClass}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                      </select>
+
+                      <button 
+                        onClick={() => setOrderToDelete(order._id)}
+                        className="p-1 text-terracotta/70 hover:text-terracotta transition-colors"
+                        title="Delete Order"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                       
-                      <button className="p-1 text-brown-muted hover:text-brown">
+                      <button className="p-1 text-brown-muted hover:text-brown ml-1">
                         {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                       </button>
                     </div>
@@ -252,6 +267,42 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </div>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brown/40 backdrop-blur-sm">
+          <div className="bg-white rounded-card shadow-lg max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-terracotta">
+                <AlertTriangle size={24} />
+                <h3 className="font-heading italic text-xl">Delete Order</h3>
+              </div>
+              <button onClick={() => setOrderToDelete(null)} className="text-brown-muted hover:text-brown">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="font-body text-sm text-brown mb-6">
+              Are you sure you want to delete this order? This action cannot be undone and the data will be permanently lost.
+            </p>
+            
+            <div className="flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setOrderToDelete(null)}
+                className="px-4 py-2 text-sm font-body text-brown hover:bg-cream-light rounded-btn transition-colors border border-brown/10"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDeleteOrder}
+                className="px-4 py-2 text-sm font-body text-white bg-terracotta hover:bg-terracotta/90 rounded-btn transition-colors"
+              >
+                Yes, delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Search, ShoppingBag, Menu, X, User } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
@@ -57,20 +58,27 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         fixed top-0 left-0 right-0 z-50
         transition-all duration-300
         ${scrolled
-          ? 'bg-cream/95 backdrop-blur-md shadow-sm'
+          ? 'bg-cream-warm/95 backdrop-blur-md shadow-sm'
           : 'bg-cream'
         }
       `}
       ref={menuRef}
     >
-      <nav className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-4 md:px-8 py-2 md:py-2 flex items-center justify-between">
 
         {/* ── Logo ── */}
         <Link
           href="/"
-          className="font-heading italic text-2xl text-mint tracking-wide flex-shrink-0 hover:opacity-80 transition-opacity"
+          className="flex-shrink-0 hover:opacity-80 transition-opacity inline-flex items-center"
         >
-          Brand Store
+          <Image 
+            src="/icon-removebg-preview.png" 
+            alt="Zayed Logo" 
+            width={280} 
+            height={280} 
+            className="object-contain h-20 w-auto md:h-28" 
+            priority
+          />
         </Link>
 
         {/* ── Desktop Nav Links (center) ── */}
@@ -82,8 +90,8 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
                 className={`
                   font-body text-sm tracking-widest uppercase transition-colors duration-200
                   ${isActive(href)
-                    ? 'text-mint underline underline-offset-4'
-                    : 'text-brown hover:text-mint'
+                    ? 'text-terracotta underline underline-offset-4 decoration-terracotta'
+                    : 'text-brown hover:text-terracotta'
                   }
                 `}
               >
@@ -180,8 +188,8 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
                   block py-4 px-6 font-body text-sm tracking-widest uppercase
                   border-b border-brown/10 transition-colors duration-200
                   ${isActive(href)
-                    ? 'text-mint'
-                    : 'text-brown hover:text-mint'
+                    ? 'text-terracotta'
+                    : 'text-brown hover:text-terracotta'
                   }
                 `}
               >

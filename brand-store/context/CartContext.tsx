@@ -50,7 +50,7 @@ interface CartContextValue {
 /* ── Context ── */
 const CartContext = createContext<CartContextValue | null>(null)
 
-const STORAGE_KEY = 'brand-store-cart'
+const STORAGE_KEY = 'zayed-cart'
 
 /* ── Validation: ensure data from localStorage is a safe array of CartItems ── */
 function isValidCartItems(data: unknown): data is CartItem[] {

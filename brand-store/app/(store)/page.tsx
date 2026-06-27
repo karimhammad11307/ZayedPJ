@@ -12,7 +12,7 @@ import Footer from '@/components/Footer'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Brand Store — Egyptian Clothing Brand',
+  title: 'ZAYED — Egyptian Clothing Brand',
   description:
     'Discover our curated collection of warm, editorial Egyptian-inspired clothing. Beautifully crafted for the modern woman.',
 }
@@ -39,7 +39,7 @@ export default async function HomePage() {
   for (const row of settingsRows) {
     settings[row.key] = row.value
   }
-  const heroImage         = settings['hero_image']         ?? null
+  const heroImage         = settings['hero_image']         ?? '/hero.jpg'
   const announcementText  = settings['announcement_text']  ?? 'Free delivery on orders over EGP 500'
 
   /* ── Fetch featured products (max 4) ── */
@@ -63,7 +63,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════
           Section 1: Announcement Banner
       ═══════════════════════════════════════════════════════ */}
-      <div className="bg-mint py-2 text-center">
+      <div className="bg-terracotta py-2 text-center">
         <p className="text-white text-sm font-body tracking-wide">{announcementText}</p>
       </div>
 
@@ -72,40 +72,57 @@ export default async function HomePage() {
       ═══════════════════════════════════════════════════════ */}
       <section className="min-h-[90vh] flex flex-col md:flex-row">
         {/* Left — Image (55%) */}
-        <div className="relative w-full md:w-[55%] min-h-[60vw] md:min-h-[90vh] overflow-hidden bg-blush">
+        <div className="hero-grain relative w-full md:w-[55%] min-h-[60vw] md:min-h-[90vh] overflow-hidden">
           {heroImage ? (
             <Image
               src={heroImage}
-              alt="Brand Store — New Collection"
+              alt="ZAYED — New Collection"
               fill
               priority
               className="object-cover"
               sizes="55vw"
             />
           ) : (
-            /* Warm gradient placeholder when no hero image is set */
-            <div className="absolute inset-0 bg-gradient-to-br from-blush via-cream to-mint-soft flex items-center justify-center">
-              <span className="font-heading italic text-[12vw] text-brown/10 select-none">BS</span>
+            /* Warm afternoon light gradient: terracotta → mustard → blush */
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #C94B2C 0%, #E8A820 45%, #E8B4A0 100%)',
+              }}
+            >
+              {/* Ghost initials in blush-tinted at 9% opacity */}
+              <span
+                className="font-heading italic text-[18vw] md:text-[12vw] select-none pointer-events-none z-10"
+                style={{ color: 'rgba(232,180,160,0.09)' }}
+              >
+                BS
+              </span>
             </div>
           )}
-          {/* Warm tone overlay */}
-          <div className="absolute inset-0 bg-brown/10 pointer-events-none" />
+          {/* Warm brown tone overlay */}
+          <div className="absolute inset-0 bg-brown/10 pointer-events-none z-[1]" />
         </div>
 
         {/* Right — Editorial text (45%) */}
-        <div className="w-full md:w-[45%] bg-cream flex flex-col justify-center px-8 md:px-16 py-16 md:py-0">
-          <p className="label-caps text-brown-muted">New Collection — 2026</p>
-          <h1 className="font-heading italic text-6xl md:text-7xl lg:text-8xl text-brown leading-[0.9] mt-4">
+        <div className="w-full md:w-[45%] bg-cream-warm flex flex-col justify-center px-8 md:px-16 py-16 md:py-0 relative">
+          {/* Subtle ambient glow behind heading */}
+          <div
+            className="absolute top-1/3 left-1/4 w-72 h-72 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(232,168,32,0.10) 0%, transparent 70%)' }}
+            aria-hidden="true"
+          />
+          <p className="label-caps text-brown-muted relative z-10">New Collection — 2026</p>
+          <h1 className="font-heading italic text-6xl md:text-7xl lg:text-8xl text-brown leading-[0.9] mt-4 relative z-10">
             Dress the<br />way you<br />feel.
           </h1>
-          <p className="font-body text-brown-muted text-lg mt-6 max-w-sm leading-relaxed">
+          <p className="font-body text-brown-muted text-lg mt-6 max-w-sm leading-relaxed relative z-10">
             Warm, editorial pieces crafted with Egyptian spirit and modern sensibility.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-8">
+          <div className="flex flex-col sm:flex-row gap-3 mt-8 relative z-10">
             <Link href="/shop" className="btn-primary">
               Shop Now
             </Link>
-            <Link href="/about" className="btn-outline">
+            <Link href="/about" className="btn-mustard">
               Our Story
             </Link>
           </div>
@@ -113,18 +130,25 @@ export default async function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          Section 3: Marquee
+          Section 3: Marquee — terracotta
       ═══════════════════════════════════════════════════════ */}
-      <MarqueeBanner />
+      <MarqueeBanner variant="terracotta" />
 
       {/* ═══════════════════════════════════════════════════════
           Section 4: Featured / Bestsellers
       ═══════════════════════════════════════════════════════ */}
-      <section className="bg-cream py-20 px-6">
+      <StripeDivider variant="mustard" height={8} />
+      <section className="bg-cream-warm py-20 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-heading italic text-5xl text-brown">Bestsellers</h2>
-            <p className="font-heading italic text-lg text-brown-muted mt-2">
+          <div className="text-center mb-12 relative">
+            {/* Ambient glow behind heading */}
+            <div
+              className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 pointer-events-none mx-auto w-64"
+              style={{ background: 'radial-gradient(ellipse, rgba(201,75,44,0.08) 0%, transparent 70%)' }}
+              aria-hidden="true"
+            />
+            <h2 className="font-heading italic text-5xl text-brown relative">Bestsellers</h2>
+            <p className="font-heading italic text-lg text-brown-muted mt-2 relative">
               Pieces our community loves
             </p>
           </div>
@@ -138,11 +162,12 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      <StripeDivider variant="mustard" height={8} />
 
       {/* ═══════════════════════════════════════════════════════
-          Section 5: Stripe Divider
+          Section 5: Forest Stripe then About
       ═══════════════════════════════════════════════════════ */}
-      <StripeDivider height={12} />
+      <StripeDivider variant="forest" height={12} />
 
       {/* ═══════════════════════════════════════════════════════
           Section 6: About Strip
@@ -152,11 +177,16 @@ export default async function HomePage() {
 
           {/* Left — Brand story */}
           <div>
-            <p className="label-caps text-cream/50">Our Story</p>
-            <h2 className="font-heading italic text-5xl text-cream mt-3 leading-tight">
+            {/* Mustard accent badge */}
+            <span className="inline-block bg-mustard text-brown text-[10px] font-body font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+              Our Story
+            </span>
+            <h2 className="font-heading italic text-5xl text-cream mt-1 leading-tight">
               Made with intention.
             </h2>
-            <p className="font-body text-cream/70 text-base mt-6 max-w-md leading-relaxed">
+            {/* Mustard accent line */}
+            <div className="w-12 h-0.5 bg-mustard mt-4 mb-6" />
+            <p className="font-body text-cream/70 text-base leading-relaxed max-w-md">
               We believe clothing is a language. Every piece in our collection is crafted to
               speak quietly of confidence, warmth, and culture rooted in the Egyptian spirit.
             </p>
@@ -168,12 +198,12 @@ export default async function HomePage() {
               href="/about"
               className="
                 mt-8 inline-flex items-center justify-center gap-2
-                border border-cream text-cream
+                border border-mustard text-mustard
                 font-body font-medium text-sm
                 px-6 py-3 rounded-btn
                 transition-all duration-200
-                hover:bg-cream hover:text-forest
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream
+                hover:bg-mustard hover:text-brown
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mustard
                 select-none
               "
             >
@@ -183,25 +213,37 @@ export default async function HomePage() {
 
           {/* Right — Polaroid collage */}
           <div className="relative flex items-center justify-center h-[380px] md:h-[480px]">
-            {/* Back polaroid — rotated −2° */}
-            <div className="absolute transform -rotate-2 shadow-xl bg-white p-3 pb-8 z-10"
-                 style={{ left: '5%', top: '5%' }}>
+            {/* Back polaroid — rotated −3° */}
+            <div
+              className="absolute transform -rotate-3 bg-white p-3 pb-8 z-10"
+              style={{
+                left: '5%',
+                top: '5%',
+                boxShadow: '0 12px 40px rgba(44,24,16,0.30)',
+              }}
+            >
               <div className="relative w-44 h-56 overflow-hidden bg-blush">
                 <Image
                   src="https://placehold.co/352x448/E8B4A0/2C1810?text=Brand+Store"
-                  alt="Brand Store collection"
+                  alt="ZAYED collection"
                   fill
                   className="object-cover"
                   unoptimized
                 />
               </div>
             </div>
-            {/* Front polaroid — rotated +1° */}
-            <div className="absolute transform rotate-1 shadow-xl bg-white p-3 pb-8 z-20"
-                 style={{ right: '5%', bottom: '5%' }}>
-              <div className="relative w-44 h-56 overflow-hidden bg-mint-soft">
+            {/* Front polaroid — rotated +2° */}
+            <div
+              className="absolute transform rotate-2 bg-white p-3 pb-8 z-20"
+              style={{
+                right: '5%',
+                bottom: '5%',
+                boxShadow: '0 12px 40px rgba(44,24,16,0.30)',
+              }}
+            >
+              <div className="relative w-44 h-56 overflow-hidden bg-mustard/20">
                 <Image
-                  src="https://placehold.co/352x448/4A9B7F/F5F0E8?text=Made+in+Egypt"
+                  src="https://placehold.co/352x448/E8A820/2C1810?text=Made+in+Egypt"
                   alt="Made in Egypt"
                   fill
                   className="object-cover"
@@ -213,15 +255,21 @@ export default async function HomePage() {
 
         </div>
       </section>
+      <StripeDivider variant="terracotta" height={12} />
 
       {/* ═══════════════════════════════════════════════════════
-          Section 7: New Arrivals
+          Section 7: New Arrivals — blush warmth
       ═══════════════════════════════════════════════════════ */}
-      <section className="bg-cream-light py-20 px-6">
+      <section className="py-20 px-6" style={{ backgroundColor: 'rgba(232,180,160,0.12)' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-heading italic text-5xl text-brown">New Arrivals</h2>
-            <p className="font-heading italic text-lg text-brown-muted mt-2">
+          <div className="text-center mb-12 relative">
+            <div
+              className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 pointer-events-none mx-auto w-64"
+              style={{ background: 'radial-gradient(ellipse, rgba(232,168,32,0.10) 0%, transparent 70%)' }}
+              aria-hidden="true"
+            />
+            <h2 className="font-heading italic text-5xl text-brown relative">New Arrivals</h2>
+            <p className="font-heading italic text-lg text-brown-muted mt-2 relative">
               Just landed in the collection
             </p>
           </div>
@@ -237,9 +285,9 @@ export default async function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          Section 8: Second Marquee
+          Section 8: Second Marquee — mustard
       ═══════════════════════════════════════════════════════ */}
-      <MarqueeBanner text="NEW ARRIVALS ✕ " />
+      <MarqueeBanner text="NEW ARRIVALS ✕ " variant="mustard" />
 
       {/* ═══════════════════════════════════════════════════════
           Section 9: Footer

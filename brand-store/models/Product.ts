@@ -14,9 +14,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IVariant {
-  size:  string
-  color: string
-  stock: number
+  size:           string
+  color:          string
+  stock:          number
+  waistPerimeter?: number
 }
 
 export interface IProduct extends Document {
@@ -53,6 +54,11 @@ const VariantSchema = new Schema<IVariant>(
         validator: Number.isInteger,
         message:   'stock must be an integer',
       },
+    },
+    waistPerimeter: {
+      type:     Number,
+      required: false,
+      min:      [0, 'Waist perimeter cannot be negative'],
     },
   },
   { _id: false }

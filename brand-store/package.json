@@ -1,5 +1,5 @@
 {
-  "name": "brand-store",
+  "name": "zayed",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@types/mongoose": "^5.11.96",
+    "@types/nodemailer": "^8.0.1",
     "cloudinary": "^2.10.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.21.0",
     "mongodb": "^7.3.0",
     "mongoose": "^9.7.1",
     "next": "14.2.35",
+    "nodemailer": "^9.0.1",
     "react": "^18",
     "react-dom": "^18",
     "resend": "^6.12.4",

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -45,9 +46,16 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-6">
       <div className="bg-white rounded-card shadow-md p-10 max-w-sm w-full">
-        <div className="text-center mb-8">
-          <h1 className="font-heading italic text-3xl text-mint">Brand Store</h1>
-          <p className="label-caps text-brown-muted mt-2">Admin Access</p>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Image 
+            src="/icon-removebg-preview.png" 
+            alt="Zayed Logo" 
+            width={200} 
+            height={200} 
+            className="object-contain h-32 w-auto mb-2" 
+            priority
+          />
+          <p className="label-caps text-brown-muted">Admin Access</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

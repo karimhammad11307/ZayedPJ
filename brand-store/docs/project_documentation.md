@@ -1,4 +1,4 @@
-# Brand Store E-Commerce Platform — Documentation
+# ZAYED E-Commerce Platform — Documentation
 
 A fully functional, modern e-commerce platform for an Egyptian clothing brand. Built from scratch with Next.js 14, MongoDB, and Tailwind CSS.
 

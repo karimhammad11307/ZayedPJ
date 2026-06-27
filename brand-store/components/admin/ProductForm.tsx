@@ -5,9 +5,10 @@ import { Plus, Trash2 } from 'lucide-react'
 import ImageUploader from './ImageUploader'
 
 interface Variant {
-  size: string
-  color: string
-  stock: number
+  size:           string
+  color:          string
+  stock:          number
+  waistPerimeter: string  // stored as string in form, converted to number on submit
 }
 
 interface ProductFormData {
@@ -28,7 +29,7 @@ interface ProductFormProps {
 }
 
 const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear']
-const DEFAULT_VARIANT = { size: 'S', color: '', stock: 0 }
+const DEFAULT_VARIANT = { size: 'S', color: '', stock: 0, waistPerimeter: '' }
 
 export default function ProductForm({ initialData, onClose, onSuccess }: ProductFormProps) {
   const isEdit = !!initialData
@@ -39,7 +40,12 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
     price:       initialData?.price?.toString() || '',
     description: initialData?.description || '',
     images:      initialData?.images || [],
-    variants:    initialData?.variants?.length > 0 ? initialData.variants : [{ ...DEFAULT_VARIANT }],
+    variants:    initialData?.variants?.length > 0
+      ? initialData.variants.map((v: any) => ({
+          ...v,
+          waistPerimeter: v.waistPerimeter?.toString() ?? '',
+        }))
+      : [{ ...DEFAULT_VARIANT }],
     isFeatured:  initialData?.isFeatured ?? false,
     isActive:    initialData?.isActive ?? true,
   })
@@ -80,7 +86,8 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
       price: Number(formData.price),
       variants: formData.variants.map(v => ({
         ...v,
-        stock: Number(v.stock)
+        stock: Number(v.stock),
+        waistPerimeter: v.waistPerimeter !== '' ? Number(v.waistPerimeter) : undefined,
       }))
     }
 
@@ -166,12 +173,12 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
             <h3 className="label-caps border-b border-brown/10 pb-2 mb-4">Sizes & Stock</h3>
             <div className="space-y-3">
               {formData.variants.map((variant, i) => (
-                <div key={i} className="flex items-center gap-3 bg-cream-light p-3 rounded-md border border-brown/10">
+                <div key={i} className="flex items-end gap-3 bg-cream-light p-3 rounded-md border border-brown/10 flex-wrap">
                   <div className="w-20">
                     <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Size</label>
                     <input required value={variant.size} onChange={(e) => handleVariantChange(i, 'size', e.target.value)} className={INPUT_CLASS} placeholder="S" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[120px]">
                     <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Color</label>
                     <input required value={variant.color} onChange={(e) => handleVariantChange(i, 'color', e.target.value)} className={INPUT_CLASS} placeholder="e.g. Olive" />
                   </div>
@@ -179,7 +186,19 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
                     <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Stock</label>
                     <input required type="number" min="0" value={variant.stock} onChange={(e) => handleVariantChange(i, 'stock', e.target.value)} className={INPUT_CLASS} />
                   </div>
-                  <div className="pt-5">
+                  <div className="w-28">
+                    <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Waist (cm) <span className="normal-case text-[9px] text-brown-muted">(optional)</span></label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={variant.waistPerimeter}
+                      onChange={(e) => handleVariantChange(i, 'waistPerimeter', e.target.value)}
+                      className={INPUT_CLASS}
+                      placeholder="e.g. 72.5"
+                    />
+                  </div>
+                  <div className="pb-0.5">
                     <button type="button" onClick={() => removeVariant(i)} disabled={formData.variants.length === 1} className="p-2 text-brown-muted hover:text-terracotta disabled:opacity-30">
                       <Trash2 size={18} />
                     </button>

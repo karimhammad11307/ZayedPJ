@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   await connectDB()
   const product = await Product.findOne({ slug, isActive: true }).lean()
 
-  if (!product) return { title: 'Product not found | Brand Store' }
+  if (!product) return { title: 'Product not found | ZAYED' }
 
   return {
-    title: `${product.name} | Brand Store`,
+    title: `${product.name} | ZAYED`,
     description: product.description.slice(0, 160),
   }
 }

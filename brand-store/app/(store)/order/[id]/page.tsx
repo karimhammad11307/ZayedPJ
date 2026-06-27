@@ -15,7 +15,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  return { title: `Order #${id.slice(-6).toUpperCase()} | Brand Store` }
+  return { title: `Order #${id.slice(-6).toUpperCase()} | ZAYED` }
 }
 
 /* ── Status display config ── */
@@ -93,7 +93,7 @@ export default async function OrderStatusPage({ params }: PageProps) {
           {/* ── Brand logo ── */}
           <div className="text-center mb-10">
             <Link href="/" className="font-heading italic text-3xl text-mint hover:opacity-80 transition-opacity">
-              Brand Store
+              ZAYED
             </Link>
           </div>
 

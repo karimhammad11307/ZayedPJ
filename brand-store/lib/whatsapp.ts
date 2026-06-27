@@ -37,7 +37,7 @@ export interface WhatsAppOrderData {
  */
 function formatItem(item: WhatsAppOrderItem): string {
   const lineTotal = (item.price * item.quantity).toLocaleString('en-EG')
-  return `• ${item.name} (${item.size} / ${item.color}) × ${item.quantity} — EGP ${lineTotal}`
+  return `- ${item.name} (${item.size} / ${item.color}) x ${item.quantity}  |  EGP ${lineTotal}`
 }
 
 /**
@@ -48,7 +48,7 @@ export function buildWhatsAppURL(data: WhatsAppOrderData): string | null {
   const whatsappNumber   = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER
   const instapayNumber   = process.env.NEXT_PUBLIC_INSTAPAY_NUMBER
   const vodafoneNumber   = process.env.NEXT_PUBLIC_VODAFONE_CASH_NUMBER
-  const brandName        = 'Brand Store'
+  const brandName        = 'ZAYED'
 
   if (!whatsappNumber) {
     console.error('[whatsapp] NEXT_PUBLIC_WHATSAPP_NUMBER is not set.')
@@ -57,42 +57,37 @@ export function buildWhatsAppURL(data: WhatsAppOrderData): string | null {
 
   const fulfillmentLine =
     data.fulfillment.type === 'delivery'
-      ? `📦 Delivery to: ${data.fulfillment.address ?? ''}${data.fulfillment.city ? `, ${data.fulfillment.city}` : ''}${data.fulfillment.notes ? `\nNotes: ${data.fulfillment.notes}` : ''}`
-      : '🛍️ Store Pickup'
+      ? `*Delivery to:* ${data.fulfillment.address ?? ''}${data.fulfillment.city ? `, ${data.fulfillment.city}` : ''}${data.fulfillment.notes ? `\n*Notes:* ${data.fulfillment.notes}` : ''}`
+      : '*Fulfillment:* Store Pickup'
 
   const itemLines = data.items.map(formatItem).join('\n')
 
   const paymentLines = [
-    instapayNumber   && `• InstaPay:       ${instapayNumber}`,
-    vodafoneNumber   && `• VodafoneCash:   ${vodafoneNumber}`,
+    instapayNumber   && `- InstaPay: ${instapayNumber}`,
+    vodafoneNumber   && `- Vodafone Cash: ${vodafoneNumber}`,
   ]
     .filter(Boolean)
     .join('\n')
 
   const message = [
-    `━━━━━━━━━━━━━━━━━━━━━━━`,
-    `🌿 ${brandName} — New Order`,
-    `━━━━━━━━━━━━━━━━━━━━━━━`,
-    ``,
-    `📋 Order ID: #${data.orderId}`,
-    `👤 Name:     ${data.customerName}`,
-    `📞 Phone:    ${data.phone}`,
+    `*${brandName} - New Order*`,
+    `--------------------------------`,
+    `*Order ID:* #${data.orderId}`,
+    `*Name:* ${data.customerName}`,
+    `*Phone:* ${data.phone}`,
     ``,
     fulfillmentLine,
-    ``,
-    `🛒 Items:`,
+    `--------------------------------`,
+    `*Items:*`,
     itemLines,
     ``,
-    `💰 Total: EGP ${data.total.toLocaleString('en-EG')}`,
-    ``,
-    `━━━━━━━━━━━━━━━━━━━━━━━`,
-    `💳 Payment Instructions`,
-    `━━━━━━━━━━━━━━━━━━━━━━━`,
+    `*Total: EGP ${data.total.toLocaleString('en-EG')}*`,
+    `--------------------------------`,
+    `*Payment Instructions:*`,
     `Please send the total amount via:`,
     paymentLines,
     ``,
-    `After payment, reply with your payment screenshot`,
-    `so we can confirm your order. Thank you! 🌿`,
+    `_After payment, please reply with your payment screenshot so we can confirm your order. Thank you!_`
   ].join('\n')
 
   // Sanitize phone: keep only digits and leading +

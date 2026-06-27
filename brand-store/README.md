@@ -1,4 +1,4 @@
-# Brand Store E-Commerce Platform
+# ZAYED E-Commerce Platform
 
 This is a Next.js 14 project bootstrapped with `create-next-app`.
 

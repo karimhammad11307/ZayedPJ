@@ -103,11 +103,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // ── Server-side total calculation ───────────────────────────
-    // Fetch all referenced products in ONE query
-    const productIds = Array.from(new Set<string>(body.items.map((i: IOrderItem) => i.productId)))
-    const products   = await Product.find({ _id: { $in: productIds }, isActive: true }).lean()
-    const productMap = new Map(products.map((p) => [String(p._id), p]))
+    // ── Server-side total calculation + stock validation ────────
+    // Fetch all referenced products in ONE query (as mutable docs so we can .save())
+    const productIds  = Array.from(new Set<string>(body.items.map((i: IOrderItem) => i.productId)))
+    const productDocs = await Product.find({ _id: { $in: productIds }, isActive: true })
+    const productMap  = new Map(productDocs.map((p) => [String(p._id), p]))
 
     const enrichedItems: IOrderItem[] = []
     let serverTotal = 0
@@ -118,6 +118,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(
           { error: `Product with id "${item.productId}" (item index ${i}) not found or inactive` },
           { status: 400 }
+        )
+      }
+
+      // ── Stock capacity check ─────────────────────────────────
+      const variant = product.variants.find(
+        (v) => v.size === item.size && v.color === item.color
+      )
+      if (!variant) {
+        return NextResponse.json(
+          { error: `Variant (${item.size} / ${item.color}) not found for "${product.name}"` },
+          { status: 400 }
+        )
+      }
+      if (variant.stock < item.quantity) {
+        return NextResponse.json(
+          {
+            error: `"${product.name}" (${item.size} / ${item.color}) only has ${variant.stock} item(s) left in stock.`,
+            outOfStock: true,
+          },
+          { status: 409 }
         )
       }
 
@@ -144,6 +164,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       total:        serverTotal, // Server-calculated, not client-submitted
       status:       'pending',
     })
+
+    // ── Deduct stock immediately on order placement ──────────────
+    // Stock is reserved as soon as the customer places the order,
+    // preventing overselling even before admin confirms.
+    for (const item of enrichedItems) {
+      const product = productMap.get(item.productId)
+      if (!product) continue
+
+      const variant = product.variants.find(
+        (v) => v.size === item.size && v.color === item.color
+      )
+      if (!variant) continue
+
+      variant.stock = Math.max(0, variant.stock - item.quantity)
+
+      // If every variant is now at 0, auto-deactivate the product
+      const allOutOfStock = product.variants.every((v) => v.stock === 0)
+      if (allOutOfStock) {
+        product.isActive   = false
+        product.isFeatured = false
+        console.log(`[stock] "${product.name}" is now out of stock — marked inactive.`)
+      }
+
+      await product.save()
+    }
 
     // ── Fire receipt email — non-blocking ───────────────────────
     void sendReceiptEmail({

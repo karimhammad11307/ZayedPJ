@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import StripeDivider from '@/components/StripeDivider'
 
 export const metadata = {
-  title: 'Our Story | Brand Store',
+  title: 'Our Story | ZAYED',
   description: 'The story behind our Egyptian clothing brand.',
 }
 

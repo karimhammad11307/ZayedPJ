@@ -21,7 +21,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [hovered, setHovered] = useState(false)
 
   const hasSecondImage  = product.images.length > 1
-  const primaryImage    = product.images[0] ?? 'https://placehold.co/600x800/F5F0E8/2C1810?text=No+Image'
+  const primaryImage    = product.images[0] ?? 'https://placehold.co/600x800/F0E6D2/2C1810?text=No+Image'
   const secondaryImage  = product.images[1]
 
   /* Total stock across all variants */
@@ -42,7 +42,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/shop/${product.slug}`}
-      className="group block bg-cream-light rounded-card overflow-hidden shadow-sm hover:shadow-card-hover transition-shadow duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-mint"
+      className="group block bg-cream-warm rounded-card overflow-hidden shadow-card transition-all duration-300 hover:shadow-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-terracotta"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -82,12 +82,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* ── Badges (top-left) ── */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
           {isLowStock && (
-            <span className="bg-terracotta text-white text-[10px] font-body font-medium px-2 py-0.5 rounded-full leading-tight">
+            <span className="bg-terracotta text-white text-[10px] font-body font-semibold px-2.5 py-1 rounded-full leading-tight shadow-sm">
               Only {totalStock} left
             </span>
           )}
           {product.isFeatured && (
-            <span className="bg-mint text-white text-[10px] font-body font-medium px-2 py-0.5 rounded-full leading-tight">
+            <span className="bg-mustard text-brown text-[10px] font-body font-semibold px-2.5 py-1 rounded-full leading-tight shadow-sm">
               Featured
             </span>
           )}
@@ -104,8 +104,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </p>
 
-        {/* Price */}
-        <p className="font-heading italic text-xl text-mint mt-1">{formattedPrice}</p>
+        {/* Price — terracotta for warm, inviting feel */}
+        <p className="font-heading italic text-xl text-terracotta mt-1">{formattedPrice}</p>
 
         {/* Size pills */}
         {availableSizes.length > 0 && (

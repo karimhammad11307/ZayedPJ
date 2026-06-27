@@ -49,7 +49,9 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-forest text-cream py-16 px-8" id="contact">
+    <footer className="bg-forest text-cream pt-1 pb-16 px-8" id="contact">
+      {/* Mustard accent top border */}
+      <div className="h-1 w-full bg-mustard mb-16" aria-hidden="true" />
       <div className="max-w-7xl mx-auto">
 
         {/* ── Three Column Grid ── */}
@@ -58,7 +60,7 @@ export default function Footer() {
           {/* Column 1 — Brand */}
           <div className="flex flex-col items-center md:items-start">
             <span className="font-heading italic text-3xl text-cream leading-tight mb-3">
-              Brand Store
+              ZAYED
             </span>
             <p className="text-cream/70 text-sm font-body leading-relaxed mb-6 max-w-[220px]">
               Warm, editorial clothing crafted with Egyptian spirit.
@@ -110,7 +112,7 @@ export default function Footer() {
               {WHATSAPP_NUMBER && (
                 <p className="text-cream/80 text-sm font-body">{WHATSAPP_NUMBER}</p>
               )}
-              <p className="text-cream/80 text-sm font-body">orders@brandstore.eg</p>
+              <p className="text-cream/80 text-sm font-body">orders@zayed.eg</p>
             </div>
             <a
               href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, '')}`}
@@ -136,7 +138,7 @@ export default function Footer() {
         {/* ── Bottom Bar ── */}
         <div className="mt-12 pt-6 border-t border-cream/10 text-center">
           <p className="text-cream/40 text-xs font-body">
-            © {year} Brand Store · All rights reserved · Made with love in Egypt
+            © {year} ZAYED · All rights reserved · Made with love in Egypt
           </p>
         </div>
       </div>

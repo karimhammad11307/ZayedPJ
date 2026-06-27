@@ -1,13 +1,27 @@
+type Variant = 'forest' | 'terracotta' | 'mustard'
+
 interface StripeDividerProps {
-  /** Height in pixels. Defaults to 60. */
+  /** Height in pixels. Defaults to 12. */
   height?: number
+  /** Color variant of the stripe. Defaults to 'forest'. */
+  variant?: Variant
   className?: string
 }
 
-export default function StripeDivider({ height = 60, className = '' }: StripeDividerProps) {
+const VARIANT_CLASS: Record<Variant, string> = {
+  forest:     'stripe-divider',
+  terracotta: 'stripe-divider-terracotta',
+  mustard:    'stripe-divider-mustard',
+}
+
+export default function StripeDivider({
+  height = 12,
+  variant = 'forest',
+  className = '',
+}: StripeDividerProps) {
   return (
     <div
-      className={`stripe-divider w-full ${className}`}
+      className={`w-full ${VARIANT_CLASS[variant]} ${className}`}
       style={{ height }}
       aria-hidden="true"
     />

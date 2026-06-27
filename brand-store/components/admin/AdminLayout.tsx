@@ -28,8 +28,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const SidebarContent = () => (
     <>
-      <div className="pt-8 px-6 mb-8 flex items-center justify-between">
-        <span className="font-heading italic text-2xl text-cream">Brand Store</span>
+      {/* Mustard accent top bar */}
+      <div className="h-1 w-full bg-mustard shrink-0" aria-hidden="true" />
+      <div className="pt-6 px-6 mb-8 flex items-center justify-between">
+        <span className="font-heading italic text-2xl text-cream">ZAYED</span>
         {/* Mobile close button */}
         <button 
           className="md:hidden text-cream/70 hover:text-cream"
@@ -50,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className={`
                 flex items-center gap-3 px-6 py-3 font-body text-sm transition-colors
                 ${isActive 
-                  ? 'text-cream bg-white/10 border-r-2 border-mint' 
+                  ? 'text-cream bg-white/10 border-r-2 border-mustard' 
                   : 'text-cream/70 hover:text-cream hover:bg-forest-dark'
                 }
               `}
@@ -86,8 +88,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-cream-light flex flex-col md:flex-row">
       {/* ── Mobile Top Bar ── */}
-      <div className="md:hidden bg-forest h-14 flex items-center justify-between px-4 shrink-0 sticky top-0 z-40">
-        <span className="font-heading italic text-xl text-cream">Brand Store</span>
+      <div className="md:hidden bg-forest h-14 flex items-center justify-between px-4 shrink-0 sticky top-0 z-40 border-b-4 border-mustard">
+        <span className="font-heading italic text-xl text-cream">ZAYED</span>
         <button onClick={() => setMobileMenuOpen(true)} className="text-cream">
           <Menu size={24} />
         </button>

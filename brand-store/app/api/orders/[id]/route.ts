@@ -1,17 +1,3 @@
-/**
- * app/api/orders/[id]/route.ts
- *
- * GET   /api/orders/:id  — Public: return single order (order status page)
- * PATCH /api/orders/:id  — Admin:  update order status only
- *
- * Security notes:
- *   - PATCH verifies admin JWT (defense-in-depth on top of edge middleware).
- *   - Only the `status` field may be changed via PATCH; all other fields
- *     are stripped to prevent unauthorized data mutation.
- *   - Status is validated against an explicit allow-list.
- *   - Stack traces are never exposed in error responses.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 
@@ -117,5 +103,38 @@ export async function PATCH(
   } catch (err) {
     console.error('[PATCH /api/orders/:id]', (err as Error).message)
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+  }
+}
+
+
+/* ── DELETE /api/orders/:id ───────────────────────────────────── */
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<NextResponse> {
+  try {
+    // ── Auth ────────────────────────────────────────────────────
+    const admin = await getAdminPayload(request)
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    await connectDB()
+    const { id } = await params
+
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
+    }
+
+    const order = await Order.findByIdAndDelete(id)
+
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (err) {
+    console.error('[DELETE /api/orders/:id]', (err as Error).message)
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
   }
 }

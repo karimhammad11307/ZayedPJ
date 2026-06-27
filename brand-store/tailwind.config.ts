@@ -9,15 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream:        '#F5F0E8',
+        cream:         '#F5F0E8',
         'cream-light': '#FAFAF8',
-        'mint-soft':  '#F0F7F4',
-        mint:         '#4A9B7F',
-        forest:       '#1E4D3A',
-        terracotta:   '#C94B2C',
-        blush:        '#E8B4A0',
-        mustard:      '#E8A820',
-        brown:        '#2C1810',
+        'cream-warm':  '#F0E6D2',
+        'mint-soft':   '#F0F7F4',
+        mint:          '#4A9B7F',
+        forest:        '#1E4D3A',
+        'forest-dark': '#15392A',
+        terracotta:    '#C94B2C',
+        rust:          '#A8391F',
+        blush:         '#E8B4A0',
+        mustard:       '#E8A820',
+        brown:         '#2C1810',
         'brown-muted': '#6B5B4E',
       },
       fontFamily: {
@@ -29,8 +32,9 @@ const config: Config = {
         btn:  '14px',
       },
       boxShadow: {
-        card: '0 2px 16px 0 rgba(44,24,16,0.07)',
-        'card-hover': '0 6px 32px 0 rgba(44,24,16,0.13)',
+        card:          '0 2px 16px 0 rgba(44,24,16,0.07)',
+        'card-hover':  '0 8px 24px rgba(201,75,44,0.12)',
+        'warm':        '0 4px 12px rgba(74,155,127,0.3)',
       },
       keyframes: {
         marquee: {

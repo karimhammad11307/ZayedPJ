@@ -9,14 +9,14 @@ import AdminLayout from '@/components/admin/AdminLayout'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Admin Dashboard | Brand Store',
+  title: 'Admin Dashboard | ZAYED',
 }
 
 const STATUS_BADGE = {
-  pending:   'bg-mustard/20 text-mustard',
-  confirmed: 'bg-mint/20 text-mint',
-  shipped:   'bg-forest/20 text-forest',
-  delivered: 'bg-brown/20 text-brown',
+  pending:   'bg-mustard text-brown',
+  confirmed: 'bg-mint text-white',
+  shipped:   'bg-terracotta text-white',
+  delivered: 'bg-forest text-cream',
 } as const
 
 type OrderStatus = keyof typeof STATUS_BADGE

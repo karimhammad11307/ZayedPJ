@@ -9,7 +9,7 @@ import Footer from '@/components/Footer'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Shop — Brand Store',
+  title: 'Shop — ZAYED',
   description: 'Browse our full collection of warm, editorial Egyptian-inspired clothing.',
 }
 

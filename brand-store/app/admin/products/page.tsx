@@ -15,6 +15,10 @@ export default function AdminProductsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any | null>(null)
+  
+  // Delete Confirmation Modal state
+  const [productToDelete, setProductToDelete] = useState<{ slug: string, name: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -52,19 +56,24 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function deleteProduct(slug: string) {
-    if (!confirm('Are you sure you want to delete this product? It will be hidden from the store.')) return
+  async function confirmDelete() {
+    if (!productToDelete) return
+    setIsDeleting(true)
     
+    const slug = productToDelete.slug
     const previousProducts = [...products]
-    setProducts(products.map(p => p.slug === slug ? { ...p, isActive: false } : p))
+    setProducts(products.filter(p => p.slug !== slug)) // Completely remove it
     
     try {
       const res = await fetch(`/api/products/${slug}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Delete failed')
+      setProductToDelete(null)
       fetchProducts() // Refresh to get proper list
     } catch (err) {
       setProducts(previousProducts)
       alert('Failed to delete product')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -178,7 +187,7 @@ export default function AdminProductsPage() {
                     </button>
                     
                     <button 
-                      onClick={() => deleteProduct(product.slug)}
+                      onClick={() => setProductToDelete({ slug: product.slug, name: product.name })}
                       className="p-2 rounded-md border border-terracotta/20 text-terracotta hover:bg-terracotta/10 transition-colors"
                       title="Delete product"
                     >
@@ -192,13 +201,47 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {/* ── Modal ── */}
+      {/* ── Add/Edit Modal ── */}
       {isModalOpen && (
         <ProductForm 
           initialData={editingProduct} 
           onClose={() => setIsModalOpen(false)} 
           onSuccess={handleModalSuccess} 
         />
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-brown/50 backdrop-blur-sm" onClick={() => !isDeleting && setProductToDelete(null)} />
+          <div className="relative bg-white rounded-card shadow-2xl p-8 max-w-sm w-full border border-brown/10">
+            <div className="flex justify-center mb-4">
+              <div className="bg-terracotta/10 p-3 rounded-full text-terracotta">
+                <Trash2 size={32} />
+              </div>
+            </div>
+            <h3 className="font-heading italic text-3xl text-brown text-center mb-2">Delete Product</h3>
+            <p className="font-body text-brown-muted text-center text-sm mb-6 leading-relaxed">
+              Are you sure you want to permanently delete <span className="font-semibold text-brown">{productToDelete.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setProductToDelete(null)} 
+                className="flex-1 btn-outline !border-brown/20 !text-brown hover:!bg-brown/5"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete} 
+                className="flex-1 btn-primary !bg-terracotta hover:!bg-rust"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AdminLayout>
   )

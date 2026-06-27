@@ -1,61 +1,66 @@
 /**
- * lib/resend.ts
+ * lib/resend.ts  (now powered by Nodemailer + Gmail)
  *
- * Branded order receipt email via Resend.
+ * Branded order receipt email via Nodemailer.
  *
  * Security notes:
- *   - RESEND_API_KEY is read from env only; no fallback.
+ *   - GMAIL_USER and GMAIL_APP_PASSWORD are read from env only; no fallback.
  *   - Customer PII (email, name) is only used for addressing; never logged.
  *   - HTML is fully server-generated (no user-supplied raw HTML).
- *   - All dynamic values are inserted via template literals into a controlled
- *     HTML structure — no dangerouslySetInnerHTML / innerHTML usage.
+ *   - All dynamic values are HTML-escaped to prevent XSS in email clients.
  *   - Email sending is non-blocking (fire-and-forget) in the order API route
- *     so a Resend failure never prevents order creation.
- *   - TODO(security): Add rate limiting on the order creation endpoint to
- *     prevent email bombing via repeated order submissions.
+ *     so a mail failure never prevents order creation.
  */
 
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
+const GMAIL_USER         = process.env.GMAIL_USER
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD
 
-if (!RESEND_API_KEY) {
+if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
   throw new Error(
-    '[resend] RESEND_API_KEY environment variable is not set.'
+    '[mailer] GMAIL_USER and GMAIL_APP_PASSWORD environment variables must be set.'
   )
 }
 
-const resend = new Resend(RESEND_API_KEY)
+/* ── Nodemailer transporter (Gmail via OAuth-style App Password) ── */
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: GMAIL_USER,
+    pass: GMAIL_APP_PASSWORD,
+  },
+})
 
 /* ── Types ── */
 export interface OrderEmailItem {
-  name: string
-  size: string
-  color: string
+  name:     string
+  size:     string
+  color:    string
   quantity: number
-  price: number
+  price:    number
 }
 
 export interface OrderEmailData {
-  orderId: string
+  orderId:      string
   customerName: string
-  email: string
-  items: OrderEmailItem[]
-  total: number
+  email:        string
+  items:        OrderEmailItem[]
+  total:        number
   fulfillment: {
-    type: 'delivery' | 'pickup'
+    type:     'delivery' | 'pickup'
     address?: string
-    city?: string
+    city?:    string
   }
 }
 
 /* ── Brand constants (safe server-side values) ── */
-const BRAND_NAME  = 'Brand Store'
-const FROM_EMAIL  = 'orders@brandstore.eg' // Update to your verified Resend domain
-const MINT        = '#4A9B7F'
-const FOREST      = '#1E4D3A'
-const CREAM       = '#F5F0E8'
-const BROWN       = '#2C1810'
+const BRAND_NAME = 'ZAYED Clothing CO.'
+const FROM_EMAIL = GMAIL_USER   // Send from the authenticated Gmail account
+const MINT       = '#4A9B7F'
+const FOREST     = '#1E4D3A'
+const CREAM      = '#F5F0E8'
+const BROWN      = '#2C1810'
 
 /**
  * Build a branded HTML receipt email.
@@ -64,10 +69,10 @@ const BROWN       = '#2C1810'
 function buildReceiptHtml(data: OrderEmailData): string {
   const esc = (s: string | number) =>
     String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
 
   const itemRows = data.items
     .map(
@@ -206,16 +211,16 @@ export async function sendReceiptEmail(
   data: OrderEmailData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await resend.emails.send({
-      from:    `${BRAND_NAME} <${FROM_EMAIL}>`,
-      to:      [data.email],
+    await transporter.sendMail({
+      from:    `"${BRAND_NAME}" <${FROM_EMAIL}>`,
+      to:      data.email,
       subject: `Order Confirmed — #${data.orderId} · ${BRAND_NAME}`,
       html:    buildReceiptHtml(data),
     })
     return { success: true }
   } catch (err) {
     // Log safe error only — never log email address
-    console.error('[resend] Failed to send receipt email:', (err as Error).message)
+    console.error('[mailer] Failed to send receipt email:', (err as Error).message)
     return { success: false, error: (err as Error).message }
   }
 }

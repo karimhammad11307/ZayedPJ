@@ -21,8 +21,8 @@ const cormorant = Cormorant_Garamond({
 /* ── Site-wide metadata ── */
 export const metadata: Metadata = {
   title: {
-    default: 'Brand Store — Egyptian Clothing Brand',
-    template: '%s | Brand Store',
+    default: 'ZAYED — Egyptian Clothing Brand',
+    template: '%s | ZAYED',
   },
   description:
     'Discover our curated collection of Egyptian-inspired clothing. Warm, editorial, and beautifully crafted.',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'Brand Store',
+    siteName: 'ZAYED',
   },
   robots: {
     index: true,

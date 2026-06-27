@@ -14,9 +14,10 @@ import Footer from './Footer'
 
 /* ── Types ── */
 interface Variant {
-  size: string
-  color: string
-  stock: number
+  size:           string
+  color:          string
+  stock:          number
+  waistPerimeter?: number
 }
 
 export interface ProductDetailProps {
@@ -50,11 +51,14 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   const [selectedImage, setSelectedImage] = useState<string>(product.images[0] ?? '')
   const [selectedSize,  setSelectedSize]  = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
+  const [selectedWaist, setSelectedWaist] = useState<number | null>(null)
   const [quantity,      setQuantity]      = useState(1)
   const [cartOpen,      setCartOpen]      = useState(false)
   const [addedFlash,    setAddedFlash]    = useState(false)
 
   /* ── Derived values ── */
+  // Does this product use waist perimeters at all?
+  const hasWaistSizes = product.variants.some((v) => v.waistPerimeter != null)
   const variantsForSizePicker = selectedColor
     ? product.variants.filter((v) => v.color === selectedColor)
     : product.variants
@@ -71,6 +75,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   const isOutOfStock  = selectedSize && selectedColor && selectedStock === 0
   const isLowStock    = selectedStock > 0 && selectedStock < 5
   const canAddToCart  = !!selectedSize && !!selectedColor && selectedStock > 0
+    && (!hasWaistSizes || selectedWaist !== null)
 
   const formattedPrice = `EGP ${product.price.toLocaleString('en-EG')}`
 
@@ -88,6 +93,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
   function handleColorChange(color: string) {
     setSelectedColor(color)
+    setSelectedWaist(null) // reset waist when color changes
     // If the current size has no stock for the new color, reset it
     if (selectedSize) {
       const hasStock = product.variants.some(
@@ -203,6 +209,45 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 onChange={handleSizeChange}
               />
             </div>
+
+            {/* Waist perimeter picker (only shown if product has waist data) */}
+            {hasWaistSizes && (
+              <div className="mb-5">
+                <p className="label-caps mb-2">
+                  Waist{selectedWaist !== null
+                    ? <span className="normal-case font-normal tracking-normal ml-1 text-brown">— {selectedWaist} cm</span>
+                    : null
+                  }
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(
+                    new Set(
+                      product.variants
+                        .filter((v) => v.waistPerimeter != null)
+                        .map((v) => v.waistPerimeter as number)
+                    )
+                  )
+                    .sort((a, b) => a - b)
+                    .map((waist) => (
+                      <button
+                        key={waist}
+                        onClick={() => setSelectedWaist(waist)}
+                        aria-pressed={selectedWaist === waist}
+                        className={`
+                          rounded-md border text-sm font-body px-3 py-2 transition-all duration-150
+                          ${selectedWaist === waist
+                            ? 'bg-forest text-cream border-forest'
+                            : 'bg-cream-light text-brown border-brown/20 hover:border-mint hover:text-mint cursor-pointer'
+                          }
+                        `}
+                      >
+                        {waist} cm
+                      </button>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
 
             {/* Quantity */}
             <div className="mb-5">

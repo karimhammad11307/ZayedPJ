@@ -3,7 +3,7 @@
  *
  * GET    /api/products/:slug  — Public:  return single active product
  * PATCH  /api/products/:slug  — Admin:   partial update
- * DELETE /api/products/:slug  — Admin:   soft delete (isActive = false)
+ * DELETE /api/products/:slug  — Admin:   hard delete
  *
  * Security notes:
  *   - PATCH and DELETE verify JWT from HttpOnly cookie (defense-in-depth).
@@ -145,18 +145,14 @@ export async function DELETE(
 
     const { slug } = await params
 
-    const product = await Product.findOneAndUpdate(
-      { slug },
-      { isActive: false },
-      { returnDocument: 'after' }
-    )
+    const product = await Product.findOneAndDelete({ slug })
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
     return NextResponse.json(
-      { message: 'Product deactivated successfully', productId: product._id },
+      { message: 'Product deleted successfully', productId: product._id },
       { status: 200 }
     )
   } catch (err) {
