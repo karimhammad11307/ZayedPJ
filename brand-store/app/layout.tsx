@@ -8,6 +8,8 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+  preload: false,
+  fallback: ['system-ui', 'arial'],
 })
 
 const cormorant = Cormorant_Garamond({
@@ -16,6 +18,8 @@ const cormorant = Cormorant_Garamond({
   weight: ['300', '400', '500'],
   style: ['normal', 'italic'],
   display: 'swap',
+  preload: false,
+  fallback: ['Georgia', 'serif'],
 })
 
 /* ── Site-wide metadata ── */

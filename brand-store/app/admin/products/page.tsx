@@ -62,7 +62,7 @@ export default function AdminProductsPage() {
         body: JSON.stringify({ isActive: !currentStatus }),
       })
       if (!res.ok) throw new Error('Toggle failed')
-    } catch (_err) {
+    } catch {
       setProducts(previousProducts)
       alert('Failed to update product status')
     }
@@ -81,7 +81,7 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error('Delete failed')
       setProductToDelete(null)
       fetchProducts() // Refresh to get proper list
-    } catch (_err) {
+    } catch {
       setProducts(previousProducts)
       alert('Failed to delete product')
     } finally {

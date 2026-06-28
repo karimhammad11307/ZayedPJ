@@ -15,9 +15,33 @@ const STATUS_BADGE = {
   shipped:   'bg-terracotta text-white',
   delivered: 'bg-forest text-cream',
 } as const
+interface AdminOrderItem {
+  name: string
+  size: string
+  color: string
+  quantity: number
+  price: number
+}
+
+interface AdminOrder {
+  _id: string
+  customerName: string
+  email: string
+  phone: string
+  createdAt: string
+  status: string
+  total: number
+  fulfillment: {
+    type: 'delivery' | 'pickup'
+    address?: string
+    city?: string
+    notes?: string
+  }
+  items: AdminOrderItem[]
+}
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<AdminOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabStatus>('All')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
@@ -55,7 +79,7 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) throw new Error('Update failed')
-    } catch (err) {
+    } catch {
       // Revert on failure
       setOrders(previousOrders)
       alert('Failed to update status')
@@ -75,7 +99,7 @@ export default function AdminOrdersPage() {
         method: 'DELETE',
       })
       if (!res.ok) throw new Error('Delete failed')
-    } catch (err) {
+    } catch {
       setOrders(previousOrders)
       alert('Failed to delete order')
     }
@@ -246,7 +270,7 @@ export default function AdminOrdersPage() {
                       <div>
                         <p className="label-caps text-brown-muted mb-3">Order Items</p>
                         <ul className="space-y-3">
-                          {order.items.map((item: any, i: number) => (
+                          {order.items.map((item: AdminOrderItem, i: number) => (
                             <li key={i} className="flex justify-between items-start text-sm font-body">
                               <div>
                                 <p className="font-medium text-brown">{item.name}</p>

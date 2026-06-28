@@ -38,7 +38,6 @@ export interface OrderEmailData {
 
 /* ── Brand constants (safe server-side values) ── */
 const BRAND_NAME = 'ZAYED Clothing CO.'
-const FROM_EMAIL = process.env.GMAIL_USER ?? ''  // Send from the authenticated Gmail account
 const MINT       = '#4A9B7F'
 const FOREST     = '#1E4D3A'
 const CREAM      = '#F5F0E8'

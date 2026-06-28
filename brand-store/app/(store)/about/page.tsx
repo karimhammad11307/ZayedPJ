@@ -48,7 +48,7 @@ export default function AboutPage() {
                   each garment feels as good as it looks.
                 </p>
                 <p>
-                  Our commitment is to quality, sustainability, and timeless design. We don't follow fast fashion trends; 
+                  Our commitment is to quality, sustainability, and timeless design. We don&apos;t follow fast fashion trends; 
                   we create wardrobe staples that you will cherish for years to come.
                 </p>
               </div>
