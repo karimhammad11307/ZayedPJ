@@ -7,14 +7,26 @@ import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 import ProductForm from '@/components/admin/ProductForm'
 
+interface AdminProduct {
+  _id: string
+  name: string
+  slug: string
+  price: number
+  category: string
+  images: string[]
+  variants: { size: string; color: string; stock: number; waistPerimeter?: number }[]
+  isFeatured: boolean
+  isActive: boolean
+}
+
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<any[]>([])
+  const [products, setProducts] = useState<AdminProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<any | null>(null)
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null)
   
   // Delete Confirmation Modal state
   const [productToDelete, setProductToDelete] = useState<{ slug: string, name: string } | null>(null)
@@ -50,7 +62,7 @@ export default function AdminProductsPage() {
         body: JSON.stringify({ isActive: !currentStatus }),
       })
       if (!res.ok) throw new Error('Toggle failed')
-    } catch (err) {
+    } catch (_err) {
       setProducts(previousProducts)
       alert('Failed to update product status')
     }
@@ -69,7 +81,7 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error('Delete failed')
       setProductToDelete(null)
       fetchProducts() // Refresh to get proper list
-    } catch (err) {
+    } catch (_err) {
       setProducts(previousProducts)
       alert('Failed to delete product')
     } finally {
@@ -82,7 +94,7 @@ export default function AdminProductsPage() {
     setIsModalOpen(true)
   }
 
-  const openEditModal = (product: any) => {
+  const openEditModal = (product: AdminProduct) => {
     setEditingProduct(product)
     setIsModalOpen(true)
   }
@@ -125,7 +137,7 @@ export default function AdminProductsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {products.map((product) => {
-            const totalStock = product.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0
+            const totalStock = product.variants?.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0) || 0
             const primaryImg = product.images?.[0] || 'https://placehold.co/400x400/F5F0E8/2C1810?text=No+Image'
 
             return (

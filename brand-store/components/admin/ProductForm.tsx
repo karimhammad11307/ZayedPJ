@@ -22,8 +22,20 @@ interface ProductFormData {
   isActive: boolean
 }
 
+interface InitialProductData {
+  name?: string
+  category?: string
+  price?: number
+  description?: string
+  images?: string[]
+  variants?: { size: string; color: string; stock: number; waistPerimeter?: number }[]
+  isFeatured?: boolean
+  isActive?: boolean
+  slug?: string
+}
+
 interface ProductFormProps {
-  initialData?: any
+  initialData?: InitialProductData
   onClose: () => void
   onSuccess: () => void
 }
@@ -41,7 +53,7 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
     description: initialData?.description || '',
     images:      initialData?.images || [],
     variants:    initialData?.variants?.length > 0
-      ? initialData.variants.map((v: any) => ({
+      ? initialData.variants.map((v: { size: string; color: string; stock: number; waistPerimeter?: number }) => ({
           ...v,
           waistPerimeter: v.waistPerimeter?.toString() ?? '',
         }))

@@ -14,24 +14,6 @@
 
 import nodemailer from 'nodemailer'
 
-const GMAIL_USER         = process.env.GMAIL_USER
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD
-
-if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-  throw new Error(
-    '[mailer] GMAIL_USER and GMAIL_APP_PASSWORD environment variables must be set.'
-  )
-}
-
-/* ── Nodemailer transporter (Gmail via OAuth-style App Password) ── */
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: GMAIL_USER,
-    pass: GMAIL_APP_PASSWORD,
-  },
-})
-
 /* ── Types ── */
 export interface OrderEmailItem {
   name:     string
@@ -206,13 +188,29 @@ function buildReceiptHtml(data: OrderEmailData): string {
 /**
  * Send a branded order receipt email to the customer.
  * Resolves to { success: true } or { success: false, error } — never throws.
+ *
+ * The transporter is created lazily at call-time (not at module load time)
+ * so that missing env vars do not crash the Next.js build.
  */
 export async function sendReceiptEmail(
   data: OrderEmailData
 ): Promise<{ success: boolean; error?: string }> {
+  const gmailUser     = process.env.GMAIL_USER
+  const gmailPassword = process.env.GMAIL_APP_PASSWORD
+
+  if (!gmailUser || !gmailPassword) {
+    console.error('[mailer] GMAIL_USER or GMAIL_APP_PASSWORD is not set — skipping email.')
+    return { success: false, error: 'Email credentials not configured.' }
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: gmailUser, pass: gmailPassword },
+  })
+
   try {
     await transporter.sendMail({
-      from:    `"${BRAND_NAME}" <${FROM_EMAIL}>`,
+      from:    `"${BRAND_NAME}" <${gmailUser}>`,
       to:      data.email,
       subject: `Order Confirmed — #${data.orderId} · ${BRAND_NAME}`,
       html:    buildReceiptHtml(data),
@@ -224,3 +222,4 @@ export async function sendReceiptEmail(
     return { success: false, error: (err as Error).message }
   }
 }
+

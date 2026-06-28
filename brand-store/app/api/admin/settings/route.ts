@@ -25,7 +25,7 @@ import type { SettingKey } from '@/models/Settings'
 const ALLOWED_KEYS: SettingKey[] = ['hero_image', 'announcement_text']
 
 /* ── GET /api/admin/settings ──────────────────────────────────── */
-export async function GET(_request: NextRequest): Promise<NextResponse> {
+export async function GET(_req: NextRequest): Promise<NextResponse> {
   try {
     await connectDB()
 

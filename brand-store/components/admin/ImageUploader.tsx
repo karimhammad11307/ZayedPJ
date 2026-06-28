@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { UploadCloud, X, Loader2 } from 'lucide-react'
 
