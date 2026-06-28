@@ -52,8 +52,8 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
     price:       initialData?.price?.toString() || '',
     description: initialData?.description || '',
     images:      initialData?.images || [],
-    variants:    initialData?.variants?.length > 0
-      ? initialData.variants.map((v: { size: string; color: string; stock: number; waistPerimeter?: number }) => ({
+    variants:    (initialData?.variants?.length ?? 0) > 0
+      ? (initialData!.variants!).map((v: { size: string; color: string; stock: number; waistPerimeter?: number }) => ({
           ...v,
           waistPerimeter: v.waistPerimeter?.toString() ?? '',
         }))

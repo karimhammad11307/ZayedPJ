@@ -216,7 +216,7 @@ export default function AdminProductsPage() {
       {/* ── Add/Edit Modal ── */}
       {isModalOpen && (
         <ProductForm 
-          initialData={editingProduct} 
+          initialData={editingProduct ?? undefined} 
           onClose={() => setIsModalOpen(false)} 
           onSuccess={handleModalSuccess} 
         />
