@@ -9,27 +9,43 @@
  *   - All other /admin/* and /api/admin/* routes require a valid JWT.
  *   - Token is read from the __Host-admin-token HttpOnly cookie only.
  *   - On missing or invalid token → redirect to /admin/login (fail-closed).
- *   - Algorithm is hardcoded to HS256 inside verifyToken(); never derived
- *     from the token header.
- *   - CSRF: Next.js App Router mutations go through Server Actions or
- *     Route Handlers. State-changing API routes MUST validate the JWT token
- *     from the HttpOnly cookie (done here) AND implement CSRF double-submit
- *     cookie validation in each mutating route handler.
- *     TODO(security): Add CSRF double-submit cookie validation to all
- *     admin API route handlers that perform POST/PUT/DELETE/PATCH.
- *   - TODO(security): Add rate limiting to /api/admin/login to prevent
- *     brute-force attacks (e.g., Vercel Edge Config + Upstash Redis).
- *   - TODO(security): Consider MFA for admin authentication.
+ *   - Algorithm is hardcoded to HS256; never derived from the token header.
+ *
+ * NOTE: This file intentionally does NOT import from @/lib/auth because
+ * the Edge Runtime bundler on Vercel cannot resolve @/ path aliases in
+ * middleware. All auth logic is inlined here using jose directly.
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth'
+import { jwtVerify, type JWTPayload } from 'jose'
 
-/* Routes that must never be blocked */
+/* ── Cookie name ── */
+const AUTH_COOKIE_NAME = '__Host-admin-token'
+
+/* ── Routes that must never be blocked ── */
 const PUBLIC_ADMIN_PATHS = [
   '/admin/login',      // Admin login page (UI)
   '/api/admin/login',  // Admin login API — must be reachable before a token exists
 ]
+
+/* ── Inline token payload type ── */
+interface AdminTokenPayload extends JWTPayload {
+  role: 'admin'
+  email: string
+}
+
+/* ── Inline token verifier (Edge-safe, jose only) ── */
+async function verifyToken(token: string): Promise<AdminTokenPayload | null> {
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? '')
+    const { payload } = await jwtVerify<AdminTokenPayload>(token, secret, {
+      algorithms: ['HS256'],
+    })
+    return payload
+  } catch {
+    return null
+  }
+}
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
@@ -62,7 +78,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 function redirectToLogin(request: NextRequest): NextResponse {
   const loginUrl = new URL('/admin/login', request.url)
-  // Preserve the intended destination so we can redirect back after login
   loginUrl.searchParams.set('from', request.nextUrl.pathname)
   return NextResponse.redirect(loginUrl)
 }
