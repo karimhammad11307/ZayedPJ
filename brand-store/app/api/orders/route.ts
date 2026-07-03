@@ -190,8 +190,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       await product.save()
     }
 
-    // ── Fire receipt email — non-blocking ───────────────────────
-    void sendReceiptEmail({
+    // ── Fire receipt email ──────────────────────────────────────
+    await sendReceiptEmail({
       orderId:      String(order._id),
       customerName: order.customerName,
       email:        order.email,
@@ -204,9 +204,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })),
       total:       order.total,
       fulfillment: order.fulfillment,
-    }).catch((e: Error) =>
-      console.error('[orders] Non-blocking email failed:', e.message)
-    )
+    })
 
     // ── Build WhatsApp URL ──────────────────────────────────────
     const whatsappURL = buildWhatsAppURL({
