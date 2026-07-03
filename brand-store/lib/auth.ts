@@ -24,7 +24,7 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose'
 // so this module works in both Edge Runtime (middleware) and Node.js (route handlers).
 
 /* ── Secret resolution: Env → random ephemeral (dev only) ── */
-function resolveSecret(): Uint8Array {
+function getSecret(): Uint8Array {
   const envSecret = process.env.JWT_SECRET
 
   if (envSecret) {
@@ -47,9 +47,6 @@ function resolveSecret(): Uint8Array {
   return globalThis.crypto.getRandomValues(new Uint8Array(32))
 }
 
-// Resolved once at module load; stable for the process lifetime.
-const SECRET = resolveSecret()
-
 export interface AdminTokenPayload extends JWTPayload {
   role: 'admin'
   email: string
@@ -64,7 +61,7 @@ export async function signToken(payload: { email: string }): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(SECRET)
+    .sign(getSecret())
 }
 
 /**
@@ -74,7 +71,7 @@ export async function signToken(payload: { email: string }): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<AdminTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify<AdminTokenPayload>(token, SECRET, {
+    const { payload } = await jwtVerify<AdminTokenPayload>(token, getSecret(), {
       algorithms: ['HS256'], // Hardcoded; rejects 'none' and any other alg
     })
     return payload
