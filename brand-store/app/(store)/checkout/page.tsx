@@ -38,13 +38,14 @@ export default function CheckoutPage() {
   const [errors,      setErrors]      = useState<Record<string, string>>({})
   const [submitting,  setSubmitting]  = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSuccess,   setIsSuccess]   = useState(false)
 
   /* ── Redirect to /shop if cart is empty after hydration ── */
   useEffect(() => {
-    if (hydrated && items.length === 0) {
+    if (hydrated && items.length === 0 && !isSuccess) {
       router.replace('/shop')
     }
-  }, [hydrated, items.length, router])
+  }, [hydrated, items.length, router, isSuccess])
 
   /* ── Loading state while cart hydrates ── */
   if (!hydrated) {
@@ -122,6 +123,7 @@ export default function CheckoutPage() {
       }
 
       /* ── Success ── */
+      setIsSuccess(true)
       clearCart()
 
       if (data.whatsappURL) {
