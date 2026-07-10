@@ -21,6 +21,7 @@ import Order from '@/models/Order'
 import Product from '@/models/Product'
 import { sendReceiptEmail } from '@/lib/resend'
 import { buildWhatsAppURL } from '@/lib/whatsapp'
+import { getDeliveryZone } from '@/lib/delivery'
 import type { IOrderItem } from '@/models/Order'
 
 /* ── Helpers ──────────────────────────────────────────────────── */
@@ -93,6 +94,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'fulfillment.type is required' }, { status: 400 })
     }
 
+    let deliveryFee = 0
+    let normalizedFulfillment = body.fulfillment
+
+    if (body.fulfillment.type === 'delivery') {
+      const deliveryZone = getDeliveryZone(body.fulfillment.deliveryZoneId)
+      if (!deliveryZone) {
+        return NextResponse.json({ error: 'Please choose a valid delivery area' }, { status: 400 })
+      }
+      if (!body.fulfillment.address) {
+        return NextResponse.json({ error: 'Street address is required' }, { status: 400 })
+      }
+
+      deliveryFee = deliveryZone.price
+      normalizedFulfillment = {
+        type: 'delivery',
+        address: body.fulfillment.address,
+        city: body.fulfillment.city || deliveryZone.label,
+        deliveryZoneId: deliveryZone.id,
+        deliveryArea: deliveryZone.label,
+        deliveryDuration: deliveryZone.duration,
+        notes: body.fulfillment.notes,
+      }
+    } else if (body.fulfillment.type === 'pickup') {
+      normalizedFulfillment = { type: 'pickup' }
+    } else {
+      return NextResponse.json({ error: 'fulfillment.type must be delivery or pickup' }, { status: 400 })
+    }
+
     // ── Validate individual item fields ─────────────────────────
     for (const [i, item] of body.items.entries()) {
       if (!item.productId || !item.size || !item.color || !item.quantity) {
@@ -154,14 +183,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })
     }
 
+    const grandTotal = serverTotal + deliveryFee
+
     // ── Create the order ────────────────────────────────────────
     const order = await Order.create({
       customerName: body.customerName,
       email:        body.email,
       phone:        body.phone,
-      fulfillment:  body.fulfillment,
+      fulfillment:  normalizedFulfillment,
       items:        enrichedItems,
-      total:        serverTotal, // Server-calculated, not client-submitted
+      subtotal:     serverTotal,
+      deliveryFee,
+      total:        grandTotal, // Server-calculated, not client-submitted
       status:       'pending',
     })
 
@@ -169,25 +202,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Stock is reserved as soon as the customer places the order,
     // preventing overselling even before admin confirms.
     for (const item of enrichedItems) {
-      const product = productMap.get(item.productId)
-      if (!product) continue
-
-      const variant = product.variants.find(
-        (v) => v.size === item.size && v.color === item.color
+      await Product.updateOne(
+        {
+          _id: item.productId,
+          'variants.size': item.size,
+          'variants.color': item.color,
+        },
+        { $inc: { 'variants.$.stock': -item.quantity } }
       )
-      if (!variant) continue
-
-      variant.stock = Math.max(0, variant.stock - item.quantity)
-
-      // If every variant is now at 0, auto-deactivate the product
-      const allOutOfStock = product.variants.every((v) => v.stock === 0)
-      if (allOutOfStock) {
-        product.isActive   = false
-        product.isFeatured = false
-        console.log(`[stock] "${product.name}" is now out of stock — marked inactive.`)
-      }
-
-      await product.save()
     }
 
     // ── Fire receipt email ──────────────────────────────────────
@@ -195,6 +217,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       orderId:      String(order._id),
       customerName: order.customerName,
       email:        order.email,
+      phone:        order.phone,
       items:        order.items.map((item) => ({
         name:     item.name,
         size:     item.size,
@@ -202,6 +225,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         quantity: item.quantity,
         price:    item.price,
       })),
+      subtotal:    order.subtotal,
+      deliveryFee: order.deliveryFee,
       total:       order.total,
       fulfillment: order.fulfillment,
     })
@@ -219,13 +244,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         quantity: item.quantity,
         price:    item.price,
       })),
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
       total: order.total,
     })
 
-    return NextResponse.json(
-      { orderId: order._id, whatsappURL },
-      { status: 201 }
-    )
+    return NextResponse.json({
+      orderId: order._id,
+      whatsappURL,
+      orderNumber: order._id.toString().slice(-6).toUpperCase(),
+      subtotal: serverTotal,
+      deliveryFee,
+      total: grandTotal,
+    }, { status: 201 })
   } catch (err) {
     const error = err as Error
     console.error('[POST /api/orders]', error.message)

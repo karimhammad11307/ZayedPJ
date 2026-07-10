@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { FormEvent, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Search, ShoppingBag, Menu, X, User } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 
@@ -19,10 +18,17 @@ const NAV_LINKS = [
 
 export default function Navbar({ onCartOpen }: NavbarProps) {
   const { itemCount } = useCart()
+  const router        = useRouter()
   const pathname      = usePathname()
   const [scrolled,  setScrolled]  = useState(false)
   const [menuOpen,  setMenuOpen]  = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [cartBounce, setCartBounce] = useState(false)
+  const [showAnnouncement, setShowAnnouncement] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const previousItemCount = useRef(itemCount)
 
   /* ── Scroll listener ── */
   useEffect(() => {
@@ -47,7 +53,57 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
   /* ── Close mobile menu on route change ── */
   useEffect(() => {
     setMenuOpen(false)
+    setSearchOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (!searchOpen) return
+    const focusTimeout = window.setTimeout(() => {
+      searchInputRef.current?.focus()
+    }, 80)
+    return () => window.clearTimeout(focusTimeout)
+  }, [searchOpen])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSearchOpen(false)
+    }
+    if (searchOpen) document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [searchOpen])
+
+  useEffect(() => {
+    setShowAnnouncement(localStorage.getItem('zayed-announcement-dismissed') !== 'true')
+  }, [])
+
+  useEffect(() => {
+    if (itemCount > previousItemCount.current) {
+      setCartBounce(true)
+      const timeout = window.setTimeout(() => setCartBounce(false), 300)
+      previousItemCount.current = itemCount
+      return () => window.clearTimeout(timeout)
+    }
+    previousItemCount.current = itemCount
+  }, [itemCount])
+
+  function closeAnnouncement() {
+    localStorage.setItem('zayed-announcement-dismissed', 'true')
+    setShowAnnouncement(false)
+  }
+
+  function submitSearch(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const query = searchQuery.trim()
+    setSearchOpen(false)
+    setMenuOpen(false)
+
+    if (!query) {
+      router.push('/shop')
+      return
+    }
+
+    router.push(`/shop?search=${encodeURIComponent(query)}`)
+  }
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -58,27 +114,35 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         fixed top-0 left-0 right-0 z-50
         transition-all duration-300
         ${scrolled
-          ? 'bg-cream-warm/95 backdrop-blur-md shadow-sm'
-          : 'bg-cream'
+          ? 'bg-cream-warm/95 backdrop-blur-md shadow-warm-sm'
+          : 'bg-cream/80 backdrop-blur-md border-b border-brown/5'
         }
       `}
       ref={menuRef}
     >
+      {showAnnouncement && (
+        <div className="relative bg-forest text-cream text-center text-xs py-2 px-10">
+          Free delivery on orders over 500 EGP ✦ New collection now live
+          <button
+            type="button"
+            onClick={closeAnnouncement}
+            aria-label="Close announcement"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-cream/80 hover:text-cream transition-colors"
+          >
+            <X size={14} strokeWidth={1.8} />
+          </button>
+        </div>
+      )}
+
       <nav className="max-w-7xl mx-auto px-4 md:px-8 py-2 md:py-2 flex items-center justify-between">
 
         {/* ── Logo ── */}
         <Link
           href="/"
-          className="flex-shrink-0 hover:opacity-80 transition-opacity inline-flex items-center"
+          className="flex-shrink-0 hover:opacity-80 transition-opacity inline-flex items-baseline font-heading italic text-2xl text-forest"
         >
-          <Image 
-            src="/icon-removebg-preview.png" 
-            alt="Zayed Logo" 
-            width={280} 
-            height={280} 
-            className="object-contain h-20 w-auto md:h-28" 
-            priority
-          />
+          Zayed
+          <span className="text-terracotta text-xs ml-1" aria-hidden="true">●</span>
         </Link>
 
         {/* ── Desktop Nav Links (center) ── */}
@@ -88,10 +152,12 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
               <Link
                 href={href}
                 className={`
-                  font-body text-sm tracking-widest uppercase transition-colors duration-200
+                  relative font-body text-sm tracking-widest uppercase transition-colors duration-200
+                  after:absolute after:left-0 after:-bottom-1.5 after:h-[1.5px] after:w-full after:origin-left
+                  after:bg-terracotta after:transition-transform after:duration-300
                   ${isActive(href)
-                    ? 'text-terracotta underline underline-offset-4 decoration-terracotta'
-                    : 'text-brown hover:text-terracotta'
+                    ? 'text-terracotta after:scale-x-100'
+                    : 'text-brown hover:text-terracotta after:scale-x-0 hover:after:scale-x-100'
                   }
                 `}
               >
@@ -105,10 +171,13 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         <div className="hidden md:flex items-center gap-4">
           {/* Search */}
           <button
+            type="button"
             aria-label="Search"
+            aria-expanded={searchOpen}
+            onClick={() => setSearchOpen((v) => !v)}
             className="text-brown hover:text-mint transition-colors duration-200 p-1"
           >
-            <Search size={20} strokeWidth={1.5} />
+            {searchOpen ? <X size={20} strokeWidth={1.5} /> : <Search size={20} strokeWidth={1.5} />}
           </button>
 
           {/* Admin */}
@@ -124,7 +193,7 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
           <button
             aria-label={`Open cart, ${itemCount} items`}
             onClick={onCartOpen}
-            className="relative text-brown hover:text-mint transition-colors duration-200 p-1"
+            className={`relative text-brown hover:text-mint transition-colors duration-200 p-1 ${cartBounce ? 'animate-bounce' : ''}`}
           >
             <ShoppingBag size={20} strokeWidth={1.5} />
             {itemCount > 0 && (
@@ -137,6 +206,17 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
 
         {/* ── Mobile Actions (right) ── */}
         <div className="flex md:hidden items-center gap-3">
+          {/* Search */}
+          <button
+            type="button"
+            aria-label="Search"
+            aria-expanded={searchOpen}
+            onClick={() => setSearchOpen((v) => !v)}
+            className="text-brown hover:text-mint transition-colors duration-200 p-1"
+          >
+            {searchOpen ? <X size={20} strokeWidth={1.5} /> : <Search size={20} strokeWidth={1.5} />}
+          </button>
+
           {/* Admin */}
           <Link
             href="/admin/login"
@@ -150,7 +230,7 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
           <button
             aria-label={`Open cart, ${itemCount} items`}
             onClick={onCartOpen}
-            className="relative text-brown hover:text-mint transition-colors duration-200 p-1"
+            className={`relative text-brown hover:text-mint transition-colors duration-200 p-1 ${cartBounce ? 'animate-bounce' : ''}`}
           >
             <ShoppingBag size={20} strokeWidth={1.5} />
             {itemCount > 0 && (
@@ -171,6 +251,39 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         </div>
       </nav>
 
+      {/* ── Search Panel ── */}
+      <div
+        className={`
+          overflow-hidden border-t border-brown/10 bg-cream/95 backdrop-blur-md
+          transition-all duration-300 ease-in-out
+          ${searchOpen ? 'max-h-28 opacity-100' : 'max-h-0 opacity-0'}
+        `}
+      >
+        <form
+          onSubmit={submitSearch}
+          className="max-w-3xl mx-auto px-4 md:px-8 py-3 flex items-center gap-2"
+        >
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              strokeWidth={1.6}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-brown-muted pointer-events-none"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search dresses, tops, colors..."
+              className="input-base pl-11 pr-4 py-3"
+            />
+          </div>
+          <button type="submit" className="btn-primary px-5 py-3">
+            Search
+          </button>
+        </form>
+      </div>
+
       {/* ── Mobile Dropdown Menu ── */}
       <div
         className={`
@@ -178,14 +291,14 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
           ${menuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}
         `}
       >
-        <ul className="bg-cream border-t border-brown/10">
+        <ul className="bg-cream-warm border-t border-brown/10">
           {NAV_LINKS.map(({ label, href }) => (
             <li key={href}>
               <Link
                 href={href}
                 onClick={() => setMenuOpen(false)}
                 className={`
-                  block py-4 px-6 font-body text-sm tracking-widest uppercase
+                  block py-5 px-6 font-body text-sm tracking-widest uppercase
                   border-b border-brown/10 transition-colors duration-200
                   ${isActive(href)
                     ? 'text-terracotta'

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Cormorant_Garamond } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
+import { ToastProvider } from '@/context/ToastContext'
 
 /* ── Google Fonts via next/font (zero layout shift) ── */
 const inter = Inter({
@@ -24,17 +25,18 @@ const cormorant = Cormorant_Garamond({
 
 /* ── Site-wide metadata ── */
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: {
-    default: 'ZAYED — Egyptian Clothing Brand',
-    template: '%s | ZAYED',
+    default: 'Zayed — Egyptian Clothing Brand',
+    template: '%s — Zayed',
   },
   description:
-    'Discover our curated collection of Egyptian-inspired clothing. Warm, editorial, and beautifully crafted.',
+    'Warm, editorial clothing pieces crafted with Egyptian spirit.',
   keywords: ['Egyptian fashion', 'clothing brand', 'women fashion', 'editorial style'],
   openGraph: {
     type: 'website',
-    locale: 'en_US',
-    siteName: 'ZAYED',
+    locale: 'en_EG',
+    siteName: 'Zayed',
   },
   robots: {
     index: true,
@@ -51,7 +53,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${cormorant.variable}`}>
       <body className="bg-cream text-brown font-body antialiased">
         <CartProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </CartProvider>
       </body>
     </html>

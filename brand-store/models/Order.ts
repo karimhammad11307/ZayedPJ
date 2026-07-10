@@ -27,10 +27,13 @@ export interface IOrderItem {
 }
 
 export interface IFulfillment {
-  type:     'delivery' | 'pickup'
-  address?: string
-  city?:    string
-  notes?:   string
+  type:              'delivery' | 'pickup'
+  address?:          string
+  city?:             string
+  deliveryZoneId?:   string
+  deliveryArea?:     string
+  deliveryDuration?: string
+  notes?:            string
 }
 
 export interface IOrder extends Document {
@@ -39,6 +42,8 @@ export interface IOrder extends Document {
   phone:        string
   fulfillment:  IFulfillment
   items:        IOrderItem[]
+  subtotal:     number
+  deliveryFee:  number
   total:        number
   status:       'pending' | 'confirmed' | 'shipped' | 'delivered'
   createdAt:    Date
@@ -75,6 +80,9 @@ const FulfillmentSchema = new Schema<IFulfillment>(
     type:    { type: String, required: true, enum: ['delivery', 'pickup'] },
     address: { type: String, trim: true, maxlength: 500 },
     city:    { type: String, trim: true, maxlength: 100 },
+    deliveryZoneId:   { type: String, trim: true, maxlength: 100 },
+    deliveryArea:     { type: String, trim: true, maxlength: 200 },
+    deliveryDuration: { type: String, trim: true, maxlength: 20 },
     notes:   { type: String, trim: true, maxlength: 1000 },
   },
   { _id: false }
@@ -117,6 +125,18 @@ const OrderSchema = new Schema<IOrder>(
         validator: (arr: IOrderItem[]) => arr.length >= 1 && arr.length <= 100,
         message:   'Order must have between 1 and 100 items',
       },
+    },
+    subtotal: {
+      type:     Number,
+      required: true,
+      min:      [0, 'Subtotal cannot be negative'],
+      default:  0,
+    },
+    deliveryFee: {
+      type:     Number,
+      required: true,
+      min:      [0, 'Delivery fee cannot be negative'],
+      default:  0,
     },
     total: {
       type:     Number,

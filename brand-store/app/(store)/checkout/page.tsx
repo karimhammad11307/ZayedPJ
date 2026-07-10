@@ -1,21 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+import { ChevronDown, MapPin, MessageCircle, Package, Search, Shield, ShoppingBag, Truck } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag } from 'lucide-react'
 
 import { useCart } from '@/context/CartContext'
+import { useToast } from '@/context/ToastContext'
+import { DELIVERY_ZONES, formatDeliveryZone } from '@/lib/delivery'
 
-/* ── Shared input style ── */
-const INPUT_CLASS =
-  'w-full border border-brown/20 rounded-card bg-cream-light px-4 py-3 font-body text-brown text-sm ' +
-  'focus:border-mint focus:outline-none focus:ring-1 focus:ring-mint ' +
-  'placeholder:text-brown-muted/50 transition-colors duration-150'
-
-const LABEL_CLASS = 'label-caps text-brown mb-1 block'
-
-/* ── Field-level error helper ── */
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null
   return <p className="text-terracotta text-xs mt-1">{msg}</p>
@@ -23,69 +17,70 @@ function FieldError({ msg }: { msg?: string }) {
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const { items, total, hydrated, clearCart } = useCart()
-
-  /* ── Form state ── */
-  const [name,            setName]            = useState('')
-  const [email,           setEmail]           = useState('')
-  const [phone,           setPhone]           = useState('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [fulfillmentType, setFulfillmentType] = useState<'delivery' | 'pickup'>('delivery')
-  const [address,         setAddress]         = useState('')
-  const [city,            setCity]            = useState('')
-  const [notes,           setNotes]           = useState('')
-
-  /* ── Submission state ── */
-  const [errors,      setErrors]      = useState<Record<string, string>>({})
-  const [submitting,  setSubmitting]  = useState(false)
+  const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [deliveryZoneId, setDeliveryZoneId] = useState('')
+  const [deliverySearch, setDeliverySearch] = useState('')
+  const [deliveryDropdownOpen, setDeliveryDropdownOpen] = useState(false)
+  const [notes, setNotes] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [isSuccess,   setIsSuccess]   = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
-  /* ── Redirect to /shop if cart is empty after hydration ── */
   useEffect(() => {
-    if (hydrated && items.length === 0 && !isSuccess) {
-      router.replace('/shop')
-    }
+    if (hydrated && items.length === 0 && !isSuccess) router.replace('/shop')
   }, [hydrated, items.length, router, isSuccess])
 
-  /* ── Loading state while cart hydrates ── */
-  if (!hydrated) {
-    return <div className="min-h-screen bg-cream" />
-  }
+  const selectedDeliveryZone = DELIVERY_ZONES.find((zone) => zone.id === deliveryZoneId) ?? null
+  const deliveryFee = fulfillmentType === 'delivery' ? selectedDeliveryZone?.price ?? 0 : 0
+  const grandTotal = total + deliveryFee
+  const filteredDeliveryZones = useMemo(() => {
+    const query = deliverySearch.trim().toLowerCase()
+    if (!query) return DELIVERY_ZONES
+    return DELIVERY_ZONES.filter((zone) =>
+      [zone.label, ...zone.areas].some((value) => value.toLowerCase().includes(query))
+    )
+  }, [deliverySearch])
+  const formattedSubtotal = `EGP ${total.toLocaleString('en-EG')}`
+  const formattedDelivery = `EGP ${deliveryFee.toLocaleString('en-EG')}`
+  const formattedGrandTotal = `EGP ${grandTotal.toLocaleString('en-EG')}`
 
-  /* ── Empty cart (will redirect momentarily) ── */
+  if (!hydrated) return <div className="min-h-screen bg-cream" />
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 text-center">
         <ShoppingBag size={64} strokeWidth={1} className="text-brown/20" />
-        <p className="font-heading italic text-2xl text-brown/40 mt-4">Your cart is empty</p>
+        <p className="heading-editorial text-2xl text-brown/40 mt-4">Your cart is empty</p>
         <Link href="/shop" className="btn-primary mt-6">Start Shopping</Link>
       </div>
     )
   }
 
-  /* ── Validation ── */
-  function validateForm(): boolean {
-    const e: Record<string, string> = {}
-
-    if (!name.trim())  e.name  = 'Full name is required'
-    if (!email.trim()) e.email = 'Email address is required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Invalid email address'
-    if (!phone.trim()) e.phone = 'Phone number is required'
-
+  function validateForm() {
+    const nextErrors: Record<string, string> = {}
+    if (!name.trim()) nextErrors.name = 'Full name is required'
+    if (!email.trim()) nextErrors.email = 'Email address is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Invalid email address'
+    if (!phone.trim()) nextErrors.phone = 'Phone number is required'
     if (fulfillmentType === 'delivery') {
-      if (!address.trim()) e.address = 'Street address is required'
-      if (!city.trim())    e.city    = 'City is required'
+      if (!address.trim()) nextErrors.address = 'Street address is required'
+      if (!deliveryZoneId) nextErrors.deliveryZone = 'Please choose your delivery area'
     }
-
-    setErrors(e)
-    return Object.keys(e).length === 0
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
   }
 
-  /* ── Submit handler ── */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validateForm()) return
-
     setSubmitting(true)
     setSubmitError(null)
 
@@ -95,259 +90,228 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: name.trim(),
-          email:        email.trim().toLowerCase(),
-          phone:        phone.trim(),
-          fulfillment:
-            fulfillmentType === 'delivery'
-              ? {
-                  type:    'delivery',
-                  address: address.trim(),
-                  city:    city.trim(),
-                  notes:   notes.trim() || undefined,
-                }
-              : { type: 'pickup' },
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          fulfillment: fulfillmentType === 'delivery'
+            ? { type: 'delivery', address: address.trim(), city: city.trim(), deliveryZoneId, notes: notes.trim() || undefined }
+            : { type: 'pickup' },
           items: items.map((item) => ({
             productId: item.productId,
-            size:      item.size,
-            color:     item.color,
-            quantity:  item.quantity,
+            size: item.size,
+            color: item.color,
+            quantity: item.quantity,
           })),
-          total, // Server recalculates; sent for reference only
+          total,
         }),
       })
-
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to place order')
-      }
-
-      /* ── Success ── */
+      if (!response.ok) throw new Error(data.error ?? 'Failed to place order')
       setIsSuccess(true)
       clearCart()
-
-      if (data.whatsappURL) {
-        window.open(data.whatsappURL, '_blank')
-      }
-
+      toast({ type: 'success', message: 'Order placed! Opening WhatsApp...' })
+      if (data.whatsappURL) window.open(data.whatsappURL, '_blank')
       router.push(`/order/${data.orderId}`)
     } catch (err) {
-      setSubmitError((err as Error).message || 'Something went wrong. Please try again.')
+      const message = (err as Error).message || 'Something went wrong. Please try again.'
+      setSubmitError(message)
+      toast({ type: 'error', message })
     } finally {
       setSubmitting(false)
     }
   }
 
-  const formattedTotal = `EGP ${total.toLocaleString('en-EG')}`
-
   return (
-    <div className="min-h-screen bg-cream py-12 px-6">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="font-heading italic text-4xl text-brown mb-10">Almost there.</h1>
+    <div className="bg-cream min-h-screen py-10 px-6">
+      <div className="max-w-6xl mx-auto">
+        <Link href="/shop" className="text-brown-muted hover:text-brown text-sm">← Back to cart</Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-10 items-start mt-8">
+          <form id="checkout-form" onSubmit={handleSubmit} noValidate>
+            <h1 className="heading-editorial text-4xl">Almost there.</h1>
+            <p className="section-label text-brown-muted mt-1 mb-8">Complete your order below</p>
 
-          {/* ─── Left: Form ─── */}
-          <form onSubmit={handleSubmit} noValidate>
-
-            {/* Your Details */}
-            <fieldset className="mb-8">
-              <legend className="font-heading italic text-2xl text-brown mb-5">Your Details</legend>
-
-              <div className="space-y-4">
+            <section>
+              <p className="section-label mb-4">Your Details</p>
+              <div className="bg-cream-warm/50 rounded-[16px] p-6 mb-6 space-y-4">
                 <div>
-                  <label htmlFor="name" className={LABEL_CLASS}>Full Name</label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Menna Ali"
-                    className={INPUT_CLASS}
-                    autoComplete="name"
-                  />
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="input-base" autoComplete="name" />
                   <FieldError msg={errors.name} />
                 </div>
-
                 <div>
-                  <label htmlFor="email" className={LABEL_CLASS}>Email Address</label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="menna@example.com"
-                    className={INPUT_CLASS}
-                    autoComplete="email"
-                  />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className="input-base" autoComplete="email" />
                   <FieldError msg={errors.email} />
                 </div>
-
                 <div>
-                  <label htmlFor="phone" className={LABEL_CLASS}>Phone Number</label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="01XXXXXXXXX"
-                    className={INPUT_CLASS}
-                    autoComplete="tel"
-                  />
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" className="input-base" autoComplete="tel" />
                   <FieldError msg={errors.phone} />
                 </div>
               </div>
-            </fieldset>
+            </section>
 
-            {/* Delivery / Pickup toggle */}
-            <fieldset className="mb-8">
-              <legend className="font-heading italic text-2xl text-brown mb-5">Delivery</legend>
-
-              {/* Toggle tabs */}
-              <div className="flex gap-2 mb-6">
-                {(['delivery', 'pickup'] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFulfillmentType(type)}
-                    className={`
-                      flex-1 py-3 px-4 rounded-card font-body text-sm font-medium capitalize
-                      transition-all duration-150 border
-                      ${fulfillmentType === type
-                        ? 'bg-forest text-cream border-forest'
-                        : 'bg-cream-light text-brown border-brown/20 hover:border-mint'
-                      }
-                    `}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-
-              {fulfillmentType === 'delivery' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="address" className={LABEL_CLASS}>Street Address</label>
-                    <input
-                      id="address"
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="15 Tahrir Square, Apt. 4"
-                      className={INPUT_CLASS}
-                      autoComplete="street-address"
-                    />
-                    <FieldError msg={errors.address} />
-                  </div>
-
-                  <div>
-                    <label htmlFor="city" className={LABEL_CLASS}>City</label>
-                    <input
-                      id="city"
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Cairo"
-                      className={INPUT_CLASS}
-                      autoComplete="address-level2"
-                    />
-                    <FieldError msg={errors.city} />
-                  </div>
-
-                  <div>
-                    <label htmlFor="notes" className={LABEL_CLASS}>
-                      Delivery Notes <span className="normal-case font-normal tracking-normal">(optional)</span>
-                    </label>
-                    <textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Any special instructions for the delivery..."
-                      rows={3}
-                      className={`${INPUT_CLASS} resize-none`}
-                    />
-                  </div>
+            <section>
+              <p className="section-label mb-4">Delivery Method</p>
+              <div className="bg-cream-warm/50 rounded-[16px] p-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    ['delivery', Truck, 'Home Delivery', '2-3 business days'],
+                    ['pickup', MapPin, 'Store Pickup', 'Available same day'],
+                  ].map(([type, Icon, label, sublabel]) => (
+                    <button
+                      key={type as string}
+                      type="button"
+                      onClick={() => setFulfillmentType(type as 'delivery' | 'pickup')}
+                      className={`border-2 rounded-[14px] p-4 cursor-pointer flex items-center gap-3 text-left transition-all ${
+                        fulfillmentType === type
+                          ? 'border-forest bg-forest/5'
+                          : 'border-brown/15 bg-cream-light hover:border-forest'
+                      }`}
+                    >
+                      <Icon size={22} className="text-forest" />
+                      <span>
+                        <span className="block text-brown font-medium">{label as string}</span>
+                        <span className="block text-brown-muted text-xs">{sublabel as string}</span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <div className="bg-mint-soft rounded-card p-4 border border-mint/20">
-                  <p className="label-caps text-mint mb-1">Pickup Location</p>
-                  <p className="font-body text-brown text-sm leading-relaxed">
-                    Our team will contact you on WhatsApp to arrange a convenient pickup time
-                    and location.
+
+                {fulfillmentType === 'delivery' ? (
+                  <div className="space-y-4 mt-5">
+                    <div>
+                      <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street address" className="input-base" autoComplete="street-address" />
+                      <FieldError msg={errors.address} />
+                    </div>
+                    <div>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryDropdownOpen(true)}
+                          className="input-base text-left flex items-center justify-between"
+                        >
+                          <span className={selectedDeliveryZone ? 'text-brown' : 'text-brown/35'}>
+                            {selectedDeliveryZone ? formatDeliveryZone(selectedDeliveryZone) : 'Choose delivery area'}
+                          </span>
+                          <ChevronDown size={18} className={`transition-transform ${deliveryDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {deliveryDropdownOpen && (
+                          <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 bg-white rounded-[16px] shadow-warm-lg border border-brown/10 overflow-hidden">
+                            <div className="p-3 border-b border-brown/10 relative">
+                              <Search size={15} className="absolute left-6 top-1/2 -translate-y-1/2 text-brown-muted" />
+                              <input
+                                value={deliverySearch}
+                                onChange={(e) => setDeliverySearch(e.target.value)}
+                                placeholder="Search area or city"
+                                className="input-base py-2 pl-9"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="max-h-72 overflow-y-auto">
+                              {filteredDeliveryZones.map((zone) => (
+                                <button
+                                  key={zone.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setDeliveryZoneId(zone.id)
+                                    setCity(zone.label)
+                                    setDeliverySearch('')
+                                    setDeliveryDropdownOpen(false)
+                                  }}
+                                  className="w-full text-left px-4 py-3 hover:bg-cream transition-colors duration-200 border-b border-brown/5 last:border-0"
+                                >
+                                  <span className="flex items-center justify-between gap-3">
+                                    <span>
+                                      <span className="block text-sm font-medium text-brown">{zone.label}</span>
+                                      <span className="block text-xs text-brown-muted line-clamp-1">{zone.areas.join(' - ')}</span>
+                                    </span>
+                                    <span className="text-right flex-shrink-0">
+                                      <span className="block font-heading italic text-terracotta">EGP {zone.price}</span>
+                                      <span className="block text-[10px] text-brown-muted">{zone.duration}h</span>
+                                    </span>
+                                  </span>
+                                </button>
+                              ))}
+                              {filteredDeliveryZones.length === 0 && (
+                                <p className="px-4 py-6 text-center text-sm text-brown-muted">No delivery area found.</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <FieldError msg={errors.deliveryZone} />
+                    </div>
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Delivery notes (optional)" rows={3} className="input-base resize-none" />
+                  </div>
+                ) : (
+                  <p className="text-brown-muted text-sm mt-5">
+                    Our team will contact you on WhatsApp to arrange pickup details.
                   </p>
-                </div>
-              )}
-            </fieldset>
+                )}
+              </div>
+            </section>
 
-            {/* Submit error */}
             {submitError && (
-              <div className="bg-terracotta/10 border border-terracotta/20 rounded-card px-4 py-3 mb-4">
-                <p className="text-terracotta text-sm font-body">{submitError}</p>
+              <div className="bg-terracotta/10 border border-terracotta/20 rounded-[12px] px-4 py-3 mb-4">
+                <p className="text-terracotta text-sm">{submitError}</p>
               </div>
             )}
+
+            <button disabled={submitting} className={`btn-primary w-full py-5 text-lg mt-6 ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+              {submitting ? 'Placing Order...' : `Place Order — ${formattedGrandTotal}`}
+            </button>
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+              {[
+                [Shield, 'Secure checkout'],
+                [MessageCircle, 'WhatsApp confirmation'],
+                [Package, 'Fast delivery'],
+              ].map(([Icon, label]) => (
+                <span key={label as string} className="flex items-center gap-1.5 text-brown-muted text-xs">
+                  <Icon size={14} />
+                  {label as string}
+                </span>
+              ))}
+            </div>
           </form>
 
-          {/* ─── Right: Order Summary ─── */}
-          <aside className="bg-cream-light rounded-card p-6 sticky top-24">
-            <h2 className="font-heading italic text-2xl text-brown mb-5">Order Summary</h2>
-
-            {/* Item list */}
-            <ul className="space-y-4 mb-5">
+          <aside className="sticky top-6 bg-cream-warm rounded-[20px] p-6">
+            <h2 className="heading-editorial text-2xl mb-6">Order Summary</h2>
+            <ul className="space-y-4">
               {items.map((item) => (
-                <li
-                  key={`${item.productId}-${item.size}-${item.color}`}
-                  className="flex items-start justify-between gap-3 pb-4 border-b border-brown/10 last:border-0 last:pb-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm text-brown font-medium line-clamp-1">
-                      {item.name}
-                    </p>
-                    <p className="text-brown-muted text-xs mt-0.5">
-                      {item.size} · {item.color}
-                    </p>
+                <li key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3">
+                  <div className="relative w-16 h-20 rounded-[8px] overflow-hidden border border-brown/5 bg-cream-light flex-shrink-0">
+                    <Image src={item.image || 'https://placehold.co/128x160/F5F0E8/2C1810?text='} alt={item.name} fill sizes="64px" className="object-cover" unoptimized={!item.image || item.image.includes('placehold.co')} />
                   </div>
-                  <p className="text-mint font-medium text-sm font-body whitespace-nowrap">
-                    × {item.quantity} · EGP {(item.price * item.quantity).toLocaleString('en-EG')}
+                  <div className="min-w-0">
+                    <p className="text-sm text-brown font-medium line-clamp-1">{item.name}</p>
+                    <p className="text-brown-muted text-xs mt-0.5">{item.size} · {item.color} · ×{item.quantity}</p>
+                  </div>
+                  <p className="text-terracotta font-medium ml-auto whitespace-nowrap text-sm">
+                    EGP {(item.price * item.quantity).toLocaleString('en-EG')}
                   </p>
                 </li>
               ))}
             </ul>
-
-            {/* Subtotal */}
-            <div className="flex justify-between text-sm font-body text-brown mb-2">
+            <div className="border-t border-brown/10 my-5" />
+            <div className="flex justify-between text-sm mb-2">
               <span className="text-brown-muted">Subtotal</span>
-              <span>{formattedTotal}</span>
+              <span>{formattedSubtotal}</span>
             </div>
-            <div className="flex justify-between text-sm font-body mb-4">
+            <div className="flex justify-between text-sm">
               <span className="text-brown-muted">Shipping</span>
-              <span className="text-brown-muted">Calculated on delivery</span>
+              <span className={selectedDeliveryZone || fulfillmentType === 'pickup' ? 'text-brown' : 'text-brown-muted'}>
+                {fulfillmentType === 'pickup' ? 'EGP 0' : selectedDeliveryZone ? formattedDelivery : 'Choose area'}
+              </span>
             </div>
-
-            <div className="border-t border-brown/10 my-4" />
-
-            {/* Total */}
+            {selectedDeliveryZone && fulfillmentType === 'delivery' && (
+              <div className="flex justify-between text-xs mt-2">
+                <span className="text-brown-muted">Delivery duration</span>
+                <span className="text-brown-muted">{selectedDeliveryZone.duration} hours</span>
+              </div>
+            )}
+            <div className="border-t border-brown/10 my-5" />
             <div className="flex justify-between items-baseline">
-              <span className="label-caps">Total</span>
-              <span className="font-heading italic text-3xl text-brown">{formattedTotal}</span>
+              <span className="section-label">Total</span>
+              <span className="font-heading italic text-3xl text-brown">{formattedGrandTotal}</span>
             </div>
-
-            {/* Place Order button */}
-            <button
-              type="submit"
-              form=""
-              onClick={handleSubmit as unknown as React.MouseEventHandler}
-              disabled={submitting}
-              className={`btn-primary w-full mt-6 text-base ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {submitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Placing Order…
-                </span>
-              ) : (
-                'Place Order'
-              )}
-            </button>
           </aside>
         </div>
       </div>

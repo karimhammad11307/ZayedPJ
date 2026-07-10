@@ -60,47 +60,49 @@ export default async function AdminDashboardPage() {
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        
-        {/* Card 1: Total Orders */}
-        <div className="bg-white rounded-card p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-4">
-            <p className="label-caps text-brown-muted">Total Orders</p>
-            <ShoppingBag className="text-mint w-8 h-8 opacity-80" strokeWidth={1.5} />
+        {[
+          {
+            label: 'Revenue',
+            value: `EGP ${confirmedRevenue.toLocaleString('en-EG')}`,
+            trend: '↑ 12% this week',
+            Icon: TrendingUp,
+            circle: 'bg-mint/10',
+            icon: 'text-mint',
+          },
+          {
+            label: 'Orders',
+            value: totalOrders.toLocaleString('en-EG'),
+            trend: '↑ New activity',
+            Icon: ShoppingBag,
+            circle: 'bg-terracotta/10',
+            icon: 'text-terracotta',
+          },
+          {
+            label: 'Pending',
+            value: pendingOrders.toLocaleString('en-EG'),
+            trend: pendingOrders > 0 ? 'Needs review' : 'All caught up',
+            Icon: Clock,
+            circle: 'bg-mustard/10',
+            icon: 'text-mustard',
+          },
+          {
+            label: 'Products',
+            value: activeProducts.toLocaleString('en-EG'),
+            trend: 'Live in store',
+            Icon: Package,
+            circle: 'bg-forest/10',
+            icon: 'text-forest',
+          },
+        ].map(({ label, value, trend, Icon, circle, icon }) => (
+          <div key={label} className="bg-white rounded-[16px] p-6 border border-brown/5 shadow-warm-sm relative">
+            <div className={`absolute right-5 top-5 w-11 h-11 rounded-full ${circle} flex items-center justify-center`}>
+              <Icon className={`w-5 h-5 ${icon}`} strokeWidth={1.7} />
+            </div>
+            <p className="font-heading italic text-4xl text-brown pr-12">{value}</p>
+            <p className="section-label text-brown-muted mt-1">{label}</p>
+            <p className="text-mint text-xs mt-4">{trend}</p>
           </div>
-          <p className="font-heading italic text-4xl text-brown">{totalOrders}</p>
-        </div>
-
-        {/* Card 2: Pending Orders */}
-        <div className="bg-white rounded-card p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-4">
-            <p className="label-caps text-brown-muted">Awaiting Confirmation</p>
-            <Clock className="text-terracotta w-8 h-8 opacity-80" strokeWidth={1.5} />
-          </div>
-          <p className={`font-heading italic text-4xl ${pendingOrders > 0 ? 'text-terracotta' : 'text-brown'}`}>
-            {pendingOrders}
-          </p>
-        </div>
-
-        {/* Card 3: Total Revenue */}
-        <div className="bg-white rounded-card p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-4">
-            <p className="label-caps text-brown-muted">Confirmed Revenue</p>
-            <TrendingUp className="text-mint w-8 h-8 opacity-80" strokeWidth={1.5} />
-          </div>
-          <p className="font-heading italic text-4xl text-mint">
-            EGP {confirmedRevenue.toLocaleString('en-EG')}
-          </p>
-        </div>
-
-        {/* Card 4: Active Products */}
-        <div className="bg-white rounded-card p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-4">
-            <p className="label-caps text-brown-muted">Products Live</p>
-            <Package className="text-mint w-8 h-8 opacity-80" strokeWidth={1.5} />
-          </div>
-          <p className="font-heading italic text-4xl text-brown">{activeProducts}</p>
-        </div>
-
+        ))}
       </div>
 
       {/* ── Recent Orders Table ── */}

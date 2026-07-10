@@ -26,11 +26,11 @@ type LeanProduct = {
 }
 
 interface ShopPageProps {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; search?: string }>
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const { category } = await searchParams
+  const { category, search } = await searchParams
 
   await connectDB()
 
@@ -44,15 +44,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   return (
     <>
       {/* ── Hero strip ── */}
-      <section className="bg-cream py-16 px-6 text-center border-b border-brown/8">
-        <h1 className="font-heading italic text-6xl text-brown">The Collection</h1>
-        <p className="label-caps text-brown-muted mt-3">
-          {products.length} piece{products.length !== 1 ? 's' : ''}
+      <section className="bg-cream-warm pt-24 pb-12 px-6 text-center">
+        <h1 className="heading-display text-brown">The Collection</h1>
+        <p className="section-label text-brown-muted mt-3">
+          {products.length} handcrafted piece{products.length !== 1 ? 's' : ''}
         </p>
       </section>
 
       {/* ── Marquee ── */}
-      <MarqueeBanner />
+      <MarqueeBanner variant="forest" />
 
       {/* ── Product grid with filters ── */}
       <section className="bg-cream py-12 px-6">
@@ -60,7 +60,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <ProductGrid
             products={products}
             showFilters
+            stickyFilters
             initialCategory={category}
+            initialSearch={search}
           />
         </div>
       </section>

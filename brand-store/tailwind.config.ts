@@ -13,6 +13,7 @@ const config: Config = {
         'cream-light': '#FAFAF8',
         'cream-warm':  '#F0E6D2',
         'mint-soft':   '#F0F7F4',
+        'mint-pale':   '#E8F4F0',
         mint:          '#4A9B7F',
         forest:        '#1E4D3A',
         'forest-dark': '#15392A',
@@ -21,6 +22,7 @@ const config: Config = {
         blush:         '#E8B4A0',
         mustard:       '#E8A820',
         brown:         '#2C1810',
+        'brown-light': '#8B6F5E',
         'brown-muted': '#6B5B4E',
       },
       fontFamily: {
@@ -35,6 +37,17 @@ const config: Config = {
         card:          '0 2px 16px 0 rgba(44,24,16,0.07)',
         'card-hover':  '0 8px 24px rgba(201,75,44,0.12)',
         'warm':        '0 4px 12px rgba(74,155,127,0.3)',
+        'warm-sm':     '0 2px 8px rgba(44, 24, 16, 0.08)',
+        'warm-md':     '0 4px 16px rgba(44, 24, 16, 0.12)',
+        'warm-lg':     '0 8px 32px rgba(44, 24, 16, 0.16)',
+        'terracotta-glow': '0 4px 20px rgba(201, 75, 44, 0.2)',
+        'mint-glow':   '0 4px 20px rgba(74, 155, 127, 0.2)',
+      },
+      spacing: {
+        '18':  '4.5rem',
+        '22':  '5.5rem',
+        '88':  '22rem',
+        '128': '32rem',
       },
       keyframes: {
         marquee: {

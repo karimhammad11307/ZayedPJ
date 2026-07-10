@@ -109,6 +109,17 @@ export async function PATCH(
       body.slug = await generateUniqueSlug(body.name, String(product._id))
     }
 
+    if (Array.isArray(body.variants)) {
+      for (const variant of body.variants) {
+        if (typeof variant.stock !== 'number' || variant.stock < 0) {
+          return NextResponse.json({ error: 'Variant stock cannot be negative' }, { status: 400 })
+        }
+        if (variant.stock === 0) {
+          console.log(`[stock] "${product.name}" variant ${variant.size}/${variant.color} is now out of stock.`)
+        }
+      }
+    }
+
     // ── Apply partial update ────────────────────────────────────
     Object.assign(product, body)
     await product.save()

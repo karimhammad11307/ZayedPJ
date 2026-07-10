@@ -26,9 +26,13 @@ export interface WhatsAppOrderData {
     type: 'delivery' | 'pickup'
     address?: string
     city?: string
+    deliveryArea?: string
+    deliveryDuration?: string
     notes?: string
   }
   items: WhatsAppOrderItem[]
+  subtotal?: number
+  deliveryFee?: number
   total: number
 }
 
@@ -57,7 +61,7 @@ export function buildWhatsAppURL(data: WhatsAppOrderData): string | null {
 
   const fulfillmentLine =
     data.fulfillment.type === 'delivery'
-      ? `*Delivery to:* ${data.fulfillment.address ?? ''}${data.fulfillment.city ? `, ${data.fulfillment.city}` : ''}${data.fulfillment.notes ? `\n*Notes:* ${data.fulfillment.notes}` : ''}`
+      ? `*Delivery to:* ${data.fulfillment.address ?? ''}${data.fulfillment.city ? `, ${data.fulfillment.city}` : ''}${data.fulfillment.deliveryArea ? `\n*Area:* ${data.fulfillment.deliveryArea}` : ''}${data.fulfillment.deliveryDuration ? `\n*Delivery Time:* ${data.fulfillment.deliveryDuration} hours` : ''}${data.fulfillment.notes ? `\n*Notes:* ${data.fulfillment.notes}` : ''}`
       : '*Fulfillment:* Store Pickup'
 
   const itemLines = data.items.map(formatItem).join('\n')
@@ -81,6 +85,8 @@ export function buildWhatsAppURL(data: WhatsAppOrderData): string | null {
     `*Items:*`,
     itemLines,
     ``,
+    `*Order Subtotal:* EGP ${(data.subtotal ?? data.total - (data.deliveryFee ?? 0)).toLocaleString('en-EG')}`,
+    `*Delivery Fee:* EGP ${(data.deliveryFee ?? 0).toLocaleString('en-EG')}`,
     `*Total: EGP ${data.total.toLocaleString('en-EG')}*`,
     `--------------------------------`,
     `*Payment Instructions:*`,

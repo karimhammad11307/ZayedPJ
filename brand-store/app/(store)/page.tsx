@@ -8,16 +8,16 @@ import ProductGrid from '@/components/ProductGrid'
 import MarqueeBanner from '@/components/MarqueeBanner'
 import StripeDivider from '@/components/StripeDivider'
 import Footer from '@/components/Footer'
+import RotatingAnnouncementBar from '@/components/RotatingAnnouncementBar'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'ZAYED — Egyptian Clothing Brand',
   description:
-    'Discover our curated collection of warm, editorial Egyptian-inspired clothing. Beautifully crafted for the modern woman.',
+    'Discover warm, editorial Egyptian-inspired clothing crafted for modern sensibility.',
 }
 
-/* ── Serialisable types for lean() results ── */
 type LeanProduct = {
   _id: string
   name: string
@@ -33,265 +33,188 @@ type LeanProduct = {
 export default async function HomePage() {
   await connectDB()
 
-  /* ── Fetch settings ── */
   const settingsRows = await Settings.find({}).lean()
   const settings: Record<string, string> = {}
-  for (const row of settingsRows) {
-    settings[row.key] = row.value
-  }
-  const heroImage         = settings['hero_image']         ?? '/hero.jpg'
-  const announcementText  = settings['announcement_text']  ?? 'Free delivery on orders over EGP 500'
+  for (const row of settingsRows) settings[row.key] = row.value
+  const heroImage = settings.hero_image || '/hero.jpg'
 
-  /* ── Fetch featured products (max 4) ── */
   const featuredRaw = await Product
     .find({ isFeatured: true, isActive: true })
     .sort({ createdAt: -1 })
     .limit(4)
     .lean()
-  const featured = JSON.parse(JSON.stringify(featuredRaw)) as LeanProduct[]
 
-  /* ── Fetch new arrivals (4 latest) ── */
   const newArrivalsRaw = await Product
     .find({ isActive: true })
     .sort({ createdAt: -1 })
     .limit(4)
     .lean()
+
+  const featured = JSON.parse(JSON.stringify(featuredRaw)) as LeanProduct[]
   const newArrivals = JSON.parse(JSON.stringify(newArrivalsRaw)) as LeanProduct[]
+  const collageImages = [
+    'https://placehold.co/352x448/E8B4A0/2C1810?text=ZAYED',
+    'https://placehold.co/352x448/E8A820/2C1810?text=Made+in+Egypt',
+    'https://placehold.co/352x448/F0E6D2/2C1810?text=Editorial',
+  ]
 
   return (
     <>
-      {/* ═══════════════════════════════════════════════════════
-          Section 1: Announcement Banner
-      ═══════════════════════════════════════════════════════ */}
-      <div className="bg-terracotta py-2 text-center">
-        <p className="text-white text-sm font-body tracking-wide">{announcementText}</p>
-      </div>
+      <RotatingAnnouncementBar />
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 2: Hero
-      ═══════════════════════════════════════════════════════ */}
-      <section className="min-h-[90vh] flex flex-col md:flex-row">
-        {/* Left — Image (55%) */}
-        <div className="hero-grain relative w-full md:w-[55%] min-h-[60vw] md:min-h-[90vh] overflow-hidden">
-          {heroImage ? (
+      <section className="min-h-[95vh] grid grid-cols-1 lg:grid-cols-2">
+        <div
+          className="hero-grain relative min-h-[70vh] lg:min-h-[95vh] overflow-hidden"
+          style={
+            heroImage
+              ? undefined
+              : {
+                  background:
+                    'linear-gradient(135deg, #E8B4A0 0%, #C94B2C 40%, #E8A820 70%, #F5F0E8 100%)',
+                }
+          }
+        >
+          <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 font-heading italic text-[20vw] text-forest/5 select-none leading-none text-center z-[1]">
+            ZY
+          </span>
+          {heroImage && (
             <Image
               src={heroImage}
-              alt="ZAYED — New Collection"
+              alt="ZAYED new collection"
               fill
               priority
               className="object-cover"
-              sizes="55vw"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
-          ) : (
-            /* Warm afternoon light gradient: terracotta → mustard → blush */
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, #C94B2C 0%, #E8A820 45%, #E8B4A0 100%)',
-              }}
-            >
-              {/* Ghost initials in blush-tinted at 9% opacity */}
-              <span
-                className="font-heading italic text-[18vw] md:text-[12vw] select-none pointer-events-none z-10"
-                style={{ color: 'rgba(232,180,160,0.09)' }}
-              >
-                BS
-              </span>
-            </div>
           )}
-          {/* Warm brown tone overlay */}
-          <div className="absolute inset-0 bg-brown/10 pointer-events-none z-[1]" />
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="hidden lg:block absolute right-0 top-0 h-full w-20 z-[3]"
+            aria-hidden="true"
+          >
+            <path d="M30,0 Q10,50 30,100 L100,100 L100,0 Z" fill="#F5F0E8" />
+          </svg>
         </div>
 
-        {/* Right — Editorial text (45%) */}
-        <div className="w-full md:w-[45%] bg-cream-warm flex flex-col justify-center px-8 md:px-16 py-16 md:py-0 relative">
-          {/* Subtle ambient glow behind heading */}
-          <div
-            className="absolute top-1/3 left-1/4 w-72 h-72 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(232,168,32,0.10) 0%, transparent 70%)' }}
-            aria-hidden="true"
-          />
-          <p className="label-caps text-brown-muted relative z-10">New Collection — 2026</p>
-          <h1 className="font-heading italic text-6xl md:text-7xl lg:text-8xl text-brown leading-[0.9] mt-4 relative z-10">
-            Dress the<br />way you<br />feel.
+        <div className="bg-cream px-8 py-16 lg:px-16 flex flex-col justify-center">
+          <p className="section-label animate-fade-up">New Collection — 2026</p>
+          <h1 className="heading-display text-brown mt-4 animate-fade-up animate-fade-up-delay-1">
+            Dress the way you feel.
           </h1>
-          <p className="font-body text-brown-muted text-lg mt-6 max-w-sm leading-relaxed relative z-10">
+          <p className="font-body text-brown-muted text-lg max-w-xs leading-relaxed mt-6 animate-fade-up animate-fade-up-delay-2">
             Warm, editorial pieces crafted with Egyptian spirit and modern sensibility.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-8 relative z-10">
-            <Link href="/shop" className="btn-primary">
-              Shop Now
-            </Link>
-            <Link href="/about" className="btn-mustard">
-              Our Story
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-3 mt-8 animate-fade-up animate-fade-up-delay-3">
+            <Link href="/shop" className="btn-primary">Shop Now</Link>
+            <Link href="/about" className="btn-mustard">Our Story</Link>
+          </div>
+          <div className="flex items-center gap-3 mt-8 animate-fade-up animate-fade-up-delay-4">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((item) => (
+                <span
+                  key={item}
+                  className="w-8 h-8 rounded-full bg-cream-warm border-2 border-cream shadow-warm-sm"
+                />
+              ))}
+            </div>
+            <p className="text-brown-muted text-xs">Loved by 200+ customers ✦</p>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 3: Marquee — terracotta
-      ═══════════════════════════════════════════════════════ */}
-      <MarqueeBanner variant="terracotta" />
+      <MarqueeBanner variant="forest" />
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 4: Featured / Bestsellers
-      ═══════════════════════════════════════════════════════ */}
-      <StripeDivider variant="mustard" height={8} />
-      <section className="bg-cream-warm py-20 px-6">
+      <section className="bg-cream-warm py-24 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 relative">
-            {/* Ambient glow behind heading */}
-            <div
-              className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 pointer-events-none mx-auto w-64"
-              style={{ background: 'radial-gradient(ellipse, rgba(201,75,44,0.08) 0%, transparent 70%)' }}
-              aria-hidden="true"
-            />
-            <h2 className="font-heading italic text-5xl text-brown relative">Bestsellers</h2>
-            <p className="font-heading italic text-lg text-brown-muted mt-2 relative">
-              Pieces our community loves
-            </p>
+          <div className="text-center mb-12">
+            <p className="section-label">Handpicked for you</p>
+            <h2 className="heading-editorial text-5xl lg:text-6xl mt-2">Bestsellers</h2>
           </div>
-
           <ProductGrid products={featured} />
-
           <div className="text-center mt-12">
-            <Link href="/shop" className="btn-outline">
-              View All Pieces
-            </Link>
+            <Link href="/shop" className="btn-ghost">View entire collection →</Link>
           </div>
         </div>
       </section>
-      <StripeDivider variant="mustard" height={8} />
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 5: Forest Stripe then About
-      ═══════════════════════════════════════════════════════ */}
-      <StripeDivider variant="forest" height={12} />
-
-      {/* ═══════════════════════════════════════════════════════
-          Section 6: About Strip
-      ═══════════════════════════════════════════════════════ */}
-      <section id="about" className="bg-forest py-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-
-          {/* Left — Brand story */}
-          <div>
-            {/* Mustard accent badge */}
-            <span className="inline-block bg-mustard text-brown text-[10px] font-body font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-              Our Story
-            </span>
-            <h2 className="font-heading italic text-5xl text-cream mt-1 leading-tight">
-              Made with intention.
-            </h2>
-            {/* Mustard accent line */}
-            <div className="w-12 h-0.5 bg-mustard mt-4 mb-6" />
-            <p className="font-body text-cream/70 text-base leading-relaxed max-w-md">
-              We believe clothing is a language. Every piece in our collection is crafted to
-              speak quietly of confidence, warmth, and culture rooted in the Egyptian spirit.
-            </p>
-            <p className="font-body text-cream/70 text-base mt-4 max-w-md leading-relaxed">
-              Born in Egypt, designed for the woman who knows what she wants — comfort
-              without compromise, elegance without effort.
-            </p>
-            <Link
-              href="/about"
-              className="
-                mt-8 inline-flex items-center justify-center gap-2
-                border border-mustard text-mustard
-                font-body font-medium text-sm
-                px-6 py-3 rounded-btn
-                transition-all duration-200
-                hover:bg-mustard hover:text-brown
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mustard
-                select-none
-              "
-            >
-              Read our story
-            </Link>
-          </div>
-
-          {/* Right — Polaroid collage */}
-          <div className="relative flex items-center justify-center h-[380px] md:h-[480px]">
-            {/* Back polaroid — rotated −3° */}
-            <div
-              className="absolute transform -rotate-3 bg-white p-3 pb-8 z-10"
-              style={{
-                left: '5%',
-                top: '5%',
-                boxShadow: '0 12px 40px rgba(44,24,16,0.30)',
-              }}
-            >
-              <div className="relative w-44 h-56 overflow-hidden bg-blush">
-                <Image
-                  src="https://placehold.co/352x448/E8B4A0/2C1810?text=Brand+Store"
-                  alt="ZAYED collection"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-            </div>
-            {/* Front polaroid — rotated +2° */}
-            <div
-              className="absolute transform rotate-2 bg-white p-3 pb-8 z-20"
-              style={{
-                right: '5%',
-                bottom: '5%',
-                boxShadow: '0 12px 40px rgba(44,24,16,0.30)',
-              }}
-            >
-              <div className="relative w-44 h-56 overflow-hidden bg-mustard/20">
-                <Image
-                  src="https://placehold.co/352x448/E8A820/2C1810?text=Made+in+Egypt"
-                  alt="Made in Egypt"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
       <StripeDivider variant="terracotta" height={12} />
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 7: New Arrivals — blush warmth
-      ═══════════════════════════════════════════════════════ */}
-      <section className="py-20 px-6" style={{ backgroundColor: 'rgba(232,180,160,0.12)' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 relative">
-            <div
-              className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 pointer-events-none mx-auto w-64"
-              style={{ background: 'radial-gradient(ellipse, rgba(232,168,32,0.10) 0%, transparent 70%)' }}
-              aria-hidden="true"
-            />
-            <h2 className="font-heading italic text-5xl text-brown relative">New Arrivals</h2>
-            <p className="font-heading italic text-lg text-brown-muted mt-2 relative">
-              Just landed in the collection
-            </p>
+      <section className="bg-forest py-24 px-6 lg:px-16">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-14 items-center">
+          <div>
+            <p className="section-label text-mustard">Our Story</p>
+            <h2 className="heading-editorial text-5xl text-cream mt-3">Made with intention.</h2>
+            <div className="w-[60px] h-px bg-terracotta mt-4" />
+            <div className="font-body text-cream/70 mt-6 leading-relaxed max-w-xl space-y-4">
+              <p>
+                ZAYED is built around clothes that carry warmth without noise: editorial shapes,
+                soft movement, and details inspired by Egyptian ease.
+              </p>
+              <p>
+                Each piece is chosen for daily confidence, made to feel considered, comfortable,
+                and quietly distinctive.
+              </p>
+            </div>
+            <Link
+              href="/shop"
+              className="mt-8 inline-flex items-center justify-center border border-cream text-cream px-6 py-3 rounded-btn transition-all duration-200 hover:bg-cream hover:text-forest"
+            >
+              Shop the Collection →
+            </Link>
           </div>
 
-          <ProductGrid products={newArrivals} />
-
-          <div className="text-center mt-12">
-            <Link href="/shop" className="btn-outline">
-              Explore All
-            </Link>
+          <div className="relative h-[420px] lg:h-[520px]">
+            {collageImages.map((src, index) => {
+              const positions = [
+                'left-2 top-4 -rotate-3',
+                'right-4 top-20 rotate-1',
+                'left-1/4 bottom-2 -rotate-1',
+              ]
+              return (
+                <div
+                  key={src}
+                  className={`absolute ${positions[index]} bg-white p-3 pb-10 shadow-warm-lg transition-transform duration-300 hover:z-10 hover:scale-[1.03]`}
+                >
+                  <div className="relative w-44 h-56 md:w-52 md:h-64 overflow-hidden bg-cream-warm">
+                    <Image src={src} alt="ZAYED story collage" fill className="object-cover" unoptimized />
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 8: Second Marquee — mustard
-      ═══════════════════════════════════════════════════════ */}
-      <MarqueeBanner text="NEW ARRIVALS ✕ " variant="mustard" />
+      <section className="bg-cream-warm py-16 px-6 text-center">
+        <p className="font-heading italic text-[8rem] text-terracotta/20 leading-none">200+</p>
+        <p className="section-label">happy customers</p>
+        <h2 className="heading-editorial text-3xl text-brown mt-2">and counting.</h2>
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+          {[
+            ['50+ Pieces', 'in our collection'],
+            ['2-3 Days', 'Cairo delivery'],
+            ['Made in Egypt', 'locally crafted'],
+          ].map(([value, label]) => (
+            <div key={value}>
+              <p className="font-heading italic text-2xl text-forest">{value}</p>
+              <p className="section-label text-brown-muted mt-1">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      {/* ═══════════════════════════════════════════════════════
-          Section 9: Footer
-      ═══════════════════════════════════════════════════════ */}
+      <section className="bg-cream py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="section-label">Just landed</p>
+            <h2 className="heading-editorial text-5xl lg:text-6xl mt-2">New Arrivals</h2>
+          </div>
+          <ProductGrid products={newArrivals} />
+        </div>
+      </section>
+
+      <MarqueeBanner variant="terracotta" />
       <Footer />
     </>
   )

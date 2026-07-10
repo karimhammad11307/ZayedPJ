@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { ImagePlus, Loader2, Plus, X } from 'lucide-react'
+import Image from 'next/image'
 import ImageUploader from './ImageUploader'
 
 interface Variant {
-  size:           string
-  color:          string
-  stock:          number
-  waistPerimeter: string  // stored as string in form, converted to number on submit
+  size: string
+  color: string
+  stock: number
+  waistPerimeter: string
 }
 
 interface ProductFormData {
@@ -41,83 +42,96 @@ interface ProductFormProps {
 }
 
 const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear']
+const SIZES = ['XS', 'S', 'M', 'L', 'XL']
 const DEFAULT_VARIANT = { size: 'S', color: '', stock: 0, waistPerimeter: '' }
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  sublabel,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label: string
+  sublabel: string
+}) {
+  return (
+    <button type="button" onClick={() => onChange(!checked)} className="flex items-center gap-3 text-left">
+      <span className={`w-12 h-6 rounded-full p-0.5 transition-all duration-200 ${checked ? 'bg-mint' : 'bg-brown/20'}`}>
+        <span className={`block w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${checked ? 'translate-x-6' : 'translate-x-0'}`} />
+      </span>
+      <span>
+        <span className="block text-sm font-medium text-brown">{label}</span>
+        <span className="block text-xs text-brown-muted">{sublabel}</span>
+      </span>
+    </button>
+  )
+}
 
 export default function ProductForm({ initialData, onClose, onSuccess }: ProductFormProps) {
   const isEdit = !!initialData
-
   const [formData, setFormData] = useState<ProductFormData>({
-    name:        initialData?.name || '',
-    category:    initialData?.category || 'tops',
-    price:       initialData?.price?.toString() || '',
+    name: initialData?.name || '',
+    category: initialData?.category || 'tops',
+    price: initialData?.price?.toString() || '',
     description: initialData?.description || '',
-    images:      initialData?.images || [],
-    variants:    (initialData?.variants?.length ?? 0) > 0
-      ? (initialData!.variants!).map((v: { size: string; color: string; stock: number; waistPerimeter?: number }) => ({
-          ...v,
-          waistPerimeter: v.waistPerimeter?.toString() ?? '',
-        }))
+    images: initialData?.images || [],
+    variants: (initialData?.variants?.length ?? 0) > 0
+      ? initialData!.variants!.map((v) => ({ ...v, waistPerimeter: v.waistPerimeter?.toString() ?? '' }))
       : [{ ...DEFAULT_VARIANT }],
-    isFeatured:  initialData?.isFeatured ?? false,
-    isActive:    initialData?.isActive ?? true,
+    isFeatured: initialData?.isFeatured ?? false,
+    isActive: initialData?.isActive ?? true,
   })
-
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  function updateField(field: keyof ProductFormData, value: ProductFormData[keyof ProductFormData]) {
+    setFormData((current) => ({ ...current, [field]: value }))
   }
 
-  const handleVariantChange = (index: number, field: keyof Variant, value: string | number) => {
-    const newVariants = [...formData.variants]
-    newVariants[index] = { ...newVariants[index], [field]: value }
-    setFormData(prev => ({ ...prev, variants: newVariants }))
+  function handleVariantChange(index: number, field: keyof Variant, value: string | number) {
+    const variants = [...formData.variants]
+    variants[index] = { ...variants[index], [field]: value }
+    updateField('variants', variants)
   }
 
-  const addVariant = () => {
-    setFormData(prev => ({ ...prev, variants: [...prev.variants, { ...DEFAULT_VARIANT }] }))
+  function addVariant() {
+    updateField('variants', [...formData.variants, { ...DEFAULT_VARIANT }])
   }
 
-  const removeVariant = (index: number) => {
+  function removeVariant(index: number) {
     if (formData.variants.length <= 1) return
-    const newVariants = [...formData.variants]
-    newVariants.splice(index, 1)
-    setFormData(prev => ({ ...prev, variants: newVariants }))
+    updateField('variants', formData.variants.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     setError(null)
 
-    // Format payload
     const payload = {
       ...formData,
       price: Number(formData.price),
-      variants: formData.variants.map(v => ({
-        ...v,
-        stock: Number(v.stock),
-        waistPerimeter: v.waistPerimeter !== '' ? Number(v.waistPerimeter) : undefined,
-      }))
+      variants: formData.variants.map((variant) => ({
+        ...variant,
+        stock: Number(variant.stock),
+        waistPerimeter: variant.waistPerimeter !== '' ? Number(variant.waistPerimeter) : undefined,
+      })),
     }
 
     try {
       const url = isEdit ? `/api/products/${initialData.slug}` : '/api/products'
       const method = isEdit ? 'PATCH' : 'POST'
-
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       })
-
       if (!res.ok) {
         const errData = await res.json()
         throw new Error(errData.error || 'Failed to save product')
       }
-
       onSuccess()
     } catch (err) {
       setError((err as Error).message)
@@ -126,137 +140,95 @@ export default function ProductForm({ initialData, onClose, onSuccess }: Product
     }
   }
 
-  const INPUT_CLASS = "w-full border border-brown/20 rounded-md bg-cream-light px-3 py-2 font-body text-sm text-brown focus:border-mint focus:outline-none"
-  const LABEL_CLASS = "label-caps text-brown mb-1 block"
-
   return (
-    <div className="fixed inset-0 bg-forest/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-card w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-brown/10 px-8 py-5 flex items-center justify-between z-10">
-          <h2 className="font-heading italic text-2xl text-brown">
-            {isEdit ? 'Edit Product' : 'Add New Product'}
-          </h2>
-          <button onClick={onClose} className="text-brown-muted hover:text-brown">
-            <Trash2 size={20} className="hidden" /> {/* just for spacing consistency if needed, wait no we use X */}
-            ✕
+    <div className="fixed inset-0 bg-brown/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-[18px] w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-white z-10 border-b border-brown/10 px-8 pt-8 pb-4 flex items-start justify-between">
+          <h2 className="heading-editorial text-2xl">{isEdit ? 'Edit Product' : 'Add New Product'}</h2>
+          <button type="button" onClick={onClose} className="text-brown/40 hover:text-terracotta transition-colors">
+            <X size={22} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          {/* ── Basic Info ── */}
-          <section>
-            <h3 className="label-caps border-b border-brown/10 pb-2 mb-4">Basic Info</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className={LABEL_CLASS}>Product Name</label>
-                <input required name="name" value={formData.name} onChange={handleChange} className={INPUT_CLASS} placeholder="e.g. The Linen Wrap Dress" />
-              </div>
-              
-              <div>
-                <label className={LABEL_CLASS}>Category</label>
-                <select required name="category" value={formData.category} onChange={handleChange} className={`${INPUT_CLASS} capitalize`}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              
-              <div>
-                <label className={LABEL_CLASS}>Price (EGP)</label>
-                <input required type="number" min="0" name="price" value={formData.price} onChange={handleChange} className={INPUT_CLASS} placeholder="0.00" />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className={LABEL_CLASS}>Description</label>
-                <textarea required name="description" value={formData.description} onChange={handleChange} rows={4} className={`${INPUT_CLASS} resize-none`} placeholder="Write a compelling description..." />
-              </div>
+        <form onSubmit={handleSubmit}>
+          <div className="p-8 grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-6">
+            <div className="space-y-5">
+              <input required value={formData.name} onChange={(e) => updateField('name', e.target.value)} className="input-base" placeholder="Product name" />
+              <textarea required value={formData.description} onChange={(e) => updateField('description', e.target.value)} rows={5} className="input-base resize-y" placeholder="Description" />
+              <select required value={formData.category} onChange={(e) => updateField('category', e.target.value)} className="input-base capitalize">
+                {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
             </div>
-          </section>
 
-          {/* ── Images ── */}
-          <section>
-            <h3 className="label-caps border-b border-brown/10 pb-2 mb-4">Product Images</h3>
-            <ImageUploader 
-              images={formData.images} 
-              onChange={(images) => setFormData(prev => ({ ...prev, images }))} 
-            />
-          </section>
+            <div className="space-y-5">
+              <div className="flex rounded-[10px] overflow-hidden border border-brown/15 bg-cream-light">
+                <span className="bg-cream-warm px-3 border-r border-brown/15 text-brown-muted flex items-center text-sm">EGP</span>
+                <input required type="number" min="0" value={formData.price} onChange={(e) => updateField('price', e.target.value)} className="flex-1 bg-transparent px-4 py-3 outline-none text-brown" placeholder="0" />
+              </div>
+              <Toggle checked={formData.isFeatured} onChange={(checked) => updateField('isFeatured', checked)} label="Featured" sublabel="Show on homepage" />
+              <Toggle checked={formData.isActive} onChange={(checked) => updateField('isActive', checked)} label="Active" sublabel="Visible in store" />
+            </div>
 
-          {/* ── Variants ── */}
-          <section>
-            <h3 className="label-caps border-b border-brown/10 pb-2 mb-4">Sizes & Stock</h3>
-            <div className="space-y-3">
-              {formData.variants.map((variant, i) => (
-                <div key={i} className="flex items-end gap-3 bg-cream-light p-3 rounded-md border border-brown/10 flex-wrap">
-                  <div className="w-20">
-                    <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Size</label>
-                    <input required value={variant.size} onChange={(e) => handleVariantChange(i, 'size', e.target.value)} className={INPUT_CLASS} placeholder="S" />
-                  </div>
-                  <div className="flex-1 min-w-[120px]">
-                    <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Color</label>
-                    <input required value={variant.color} onChange={(e) => handleVariantChange(i, 'color', e.target.value)} className={INPUT_CLASS} placeholder="e.g. Olive" />
-                  </div>
-                  <div className="w-24">
-                    <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Stock</label>
-                    <input required type="number" min="0" value={variant.stock} onChange={(e) => handleVariantChange(i, 'stock', e.target.value)} className={INPUT_CLASS} />
-                  </div>
-                  <div className="w-28">
-                    <label className="text-[10px] uppercase tracking-wider text-brown-muted block mb-1">Waist (cm) <span className="normal-case text-[9px] text-brown-muted">(optional)</span></label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={variant.waistPerimeter}
-                      onChange={(e) => handleVariantChange(i, 'waistPerimeter', e.target.value)}
-                      className={INPUT_CLASS}
-                      placeholder="e.g. 72.5"
-                    />
-                  </div>
-                  <div className="pb-0.5">
-                    <button type="button" onClick={() => removeVariant(i)} disabled={formData.variants.length === 1} className="p-2 text-brown-muted hover:text-terracotta disabled:opacity-30">
-                      <Trash2 size={18} />
+            <section className="md:col-span-2">
+              <p className="section-label mb-3">Product Images</p>
+              <div className="border-2 border-dashed border-brown/20 rounded-[16px] bg-cream-warm p-8 text-center hover:border-terracotta hover:bg-terracotta/3 transition-colors duration-200 mb-4">
+                <ImagePlus className="text-brown/30 w-10 h-10 mx-auto" />
+                <p className="font-body text-brown-muted mt-3">Drag images here or click to upload</p>
+                <p className="section-label text-brown/30 mt-1">PNG, JPG up to 10MB · First image = main photo</p>
+                <div className="mt-5">
+                  <ImageUploader images={formData.images} onChange={(images) => updateField('images', images)} />
+                </div>
+              </div>
+              {formData.images.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {formData.images.map((image, index) => (
+                    <div key={image} className="relative w-24 h-28 rounded-[10px] overflow-hidden border border-brown/10 flex-shrink-0">
+                      <Image src={image} alt={`Product image ${index + 1}`} fill sizes="96px" className="object-cover" />
+                      <span className="absolute left-1.5 top-1.5 text-white bg-brown/50 rounded px-1 text-xs">⠿</span>
+                      <button type="button" onClick={() => updateField('images', formData.images.filter((_, i) => i !== index))} className="absolute top-1.5 right-1.5 bg-brown/60 text-white rounded-full w-5 h-5 hover:bg-terracotta transition-colors">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="md:col-span-2">
+              <p className="section-label mb-3">Sizes & Stock</p>
+              <div className="overflow-x-auto rounded-[12px] border border-brown/10">
+                <div className="grid grid-cols-[90px_1fr_100px_60px] bg-cream-warm section-label px-4 py-2 min-w-[520px]">
+                  <span>Size</span>
+                  <span>Color</span>
+                  <span>Stock</span>
+                  <span />
+                </div>
+                {formData.variants.map((variant, index) => (
+                  <div key={index} className="grid grid-cols-[90px_1fr_100px_60px] items-center gap-3 bg-white border-b border-brown/5 px-4 py-3 min-w-[520px]">
+                    <select value={variant.size} onChange={(e) => handleVariantChange(index, 'size', e.target.value)} className="input-base py-2 px-3">
+                      {SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full border border-brown/15 flex-shrink-0" style={{ backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(variant.color) ? variant.color : '#8B6F5E' }} />
+                      <input required value={variant.color} onChange={(e) => handleVariantChange(index, 'color', e.target.value)} className="input-base py-2" placeholder="Forest Green or #1E4D3A" />
+                    </div>
+                    <input required type="number" min="0" value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)} className="input-base py-2" />
+                    <button type="button" onClick={() => removeVariant(index)} disabled={formData.variants.length === 1} className="text-brown/30 hover:text-terracotta disabled:opacity-30 transition-colors">
+                      <X size={18} />
                     </button>
                   </div>
-                </div>
-              ))}
-              <button type="button" onClick={addVariant} className="flex items-center gap-2 text-sm font-body text-mint hover:text-forest mt-2">
+                ))}
+              </div>
+              <button type="button" onClick={addVariant} className="btn-ghost text-sm mt-3 inline-flex items-center gap-2">
                 <Plus size={16} /> Add Variant
               </button>
-            </div>
-          </section>
+            </section>
 
-          {/* ── Settings ── */}
-          <section>
-            <h3 className="label-caps border-b border-brown/10 pb-2 mb-4">Settings</h3>
-            <div className="space-y-4">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={formData.isFeatured} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))} 
-                  className="w-4 h-4 text-mint focus:ring-mint border-brown/20 rounded"
-                />
-                <span className="font-body text-sm text-brown">Featured Product (Shows on homepage)</span>
-              </label>
+            {error && <p className="md:col-span-2 text-terracotta text-sm bg-terracotta/10 p-3 rounded-[10px]">{error}</p>}
+          </div>
 
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={formData.isActive} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))} 
-                  className="w-4 h-4 text-mint focus:ring-mint border-brown/20 rounded"
-                />
-                <span className="font-body text-sm text-brown">Active / Visible in store</span>
-              </label>
-            </div>
-          </section>
-
-          {error && <p className="text-terracotta text-sm font-body bg-terracotta/10 p-3 rounded-md">{error}</p>}
-
-          {/* ── Submit ── */}
-          <div className="pt-4 border-t border-brown/10 flex justify-end gap-3 sticky bottom-0 bg-white">
-            <button type="button" onClick={onClose} className="btn-outline px-6 py-2">
-              Cancel
-            </button>
-            <button type="submit" disabled={saving || formData.images.length === 0} className={`btn-primary px-8 py-2 ${saving ? 'opacity-70' : ''}`}>
+          <div className="bg-white border-t border-brown/10 px-8 py-5 sticky bottom-0 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
+            <button type="submit" disabled={saving || formData.images.length === 0} className={`btn-primary ${saving ? 'opacity-70' : ''}`}>
+              {saving && <Loader2 size={16} className="animate-spin" />}
               {saving ? 'Saving...' : 'Save Product'}
             </button>
           </div>

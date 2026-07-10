@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import { verifyToken, AUTH_COOKIE_NAME } from '@/lib/auth'
 import Order from '@/models/Order'
+import { sendOrderStatusEmail } from '@/lib/resend'
 
 /* ── Types ────────────────────────────────────────────────────── */
 interface RouteParams {
@@ -88,6 +89,11 @@ export async function PATCH(
       )
     }
 
+    const previousOrder = await Order.findById(id)
+    if (!previousOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
     // ── Update ONLY the status field ────────────────────────────
     const order = await Order.findByIdAndUpdate(
       id,
@@ -97,6 +103,19 @@ export async function PATCH(
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    if (
+      previousOrder.status !== status &&
+      ['confirmed', 'shipped', 'delivered'].includes(status)
+    ) {
+      void sendOrderStatusEmail({
+        customerName: order.customerName,
+        email: order.email,
+        orderId: String(order._id),
+        newStatus: status as 'confirmed' | 'shipped' | 'delivered',
+        total: order.total,
+      })
     }
 
     return NextResponse.json({ order }, { status: 200 })

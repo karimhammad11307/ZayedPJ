@@ -12,6 +12,19 @@ interface ColorPickerProps {
   onChange: (color: string) => void
 }
 
+function colorToCss(color: string) {
+  const normalized = color.toLowerCase()
+  if (normalized.includes('forest') || normalized.includes('green')) return '#1E4D3A'
+  if (normalized.includes('terracotta') || normalized.includes('rust') || normalized.includes('red')) return '#C94B2C'
+  if (normalized.includes('mustard') || normalized.includes('yellow')) return '#E8A820'
+  if (normalized.includes('cream') || normalized.includes('white')) return '#F5F0E8'
+  if (normalized.includes('brown')) return '#2C1810'
+  if (normalized.includes('black')) return '#111111'
+  if (normalized.includes('blue')) return '#345C7C'
+  if (normalized.includes('pink') || normalized.includes('blush')) return '#E8B4A0'
+  return '#8B6F5E'
+}
+
 export default function ColorPicker({ variants, selected, onChange }: ColorPickerProps) {
   // Deduplicate colors — keep the one with highest stock when same color appears multiple times
   const colorMap = new Map<string, ColorOption>()
@@ -25,7 +38,7 @@ export default function ColorPicker({ variants, selected, onChange }: ColorPicke
 
   return (
     <div>
-      <p className="label-caps mb-2">
+      <p className="section-label mb-2">
         Color{selected ? <span className="normal-case font-normal tracking-normal ml-1 text-brown">— {selected}</span> : null}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -42,14 +55,15 @@ export default function ColorPicker({ variants, selected, onChange }: ColorPicke
               aria-label={outOfStock ? `${color} — out of stock` : color}
               aria-pressed={isSelected}
               className={`
-                rounded-md border text-sm font-body px-3 py-2 transition-all duration-150
+                w-10 h-10 rounded-full border text-[0px] transition-all duration-150
                 ${outOfStock
-                  ? 'opacity-40 line-through cursor-not-allowed border-brown/20 bg-cream-light text-brown'
+                  ? 'opacity-40 cursor-not-allowed border-brown/20 bg-cream-light'
                   : isSelected
-                    ? 'bg-forest text-cream border-forest'
-                    : 'bg-cream-light text-brown border-brown/20 hover:border-mint hover:text-mint cursor-pointer'
+                    ? 'ring-2 ring-offset-2 ring-terracotta border-transparent'
+                    : 'border-transparent hover:ring-1 hover:ring-brown/30 cursor-pointer'
                 }
               `}
+              style={{ backgroundColor: colorToCss(color) }}
             >
               {color}
             </button>
