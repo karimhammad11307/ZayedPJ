@@ -60,6 +60,20 @@
     position: relative;
   }
 
+  @media (hover: hover) and (pointer: fine) {
+    html,
+    body,
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'] {
+      cursor: url('/zayed-logo-cursor.png') 16 16, auto;
+    }
+  }
+
   body::before {
     content: '';
     position: fixed;

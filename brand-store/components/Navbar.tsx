@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Search, ShoppingBag, Menu, X, User } from 'lucide-react'
@@ -134,19 +135,10 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         </div>
       )}
 
-      <nav className="max-w-7xl mx-auto px-4 md:px-8 py-2 md:py-2 flex items-center justify-between">
+      <nav className="relative max-w-7xl mx-auto px-4 md:px-8 py-2 md:py-2 flex items-center justify-between">
 
-        {/* ── Logo ── */}
-        <Link
-          href="/"
-          className="flex-shrink-0 hover:opacity-80 transition-opacity inline-flex items-baseline font-heading italic text-2xl text-forest"
-        >
-          Zayed
-          <span className="text-terracotta text-xs ml-1" aria-hidden="true">●</span>
-        </Link>
-
-        {/* ── Desktop Nav Links (center) ── */}
-        <ul className="hidden md:flex items-center gap-8">
+        {/* ── Desktop Nav Links (left) ── */}
+        <ul className="hidden md:flex items-center gap-8 min-w-0 flex-1">
           {NAV_LINKS.map(({ label, href }) => (
             <li key={href}>
               <Link
@@ -167,8 +159,24 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
           ))}
         </ul>
 
+        {/* ── Centered Logo ── */}
+        <Link
+          href="/"
+          aria-label="Zayed home"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hover:opacity-80 transition-opacity"
+        >
+          <Image
+            src="/zayed-logo.png"
+            alt="Zayed"
+            width={92}
+            height={92}
+            priority
+            className="h-16 w-auto object-contain md:h-20"
+          />
+        </Link>
+
         {/* ── Desktop Actions (right) ── */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center justify-end gap-4 min-w-0 flex-1">
           {/* Search */}
           <button
             type="button"
@@ -205,7 +213,7 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
         </div>
 
         {/* ── Mobile Actions (right) ── */}
-        <div className="flex md:hidden items-center gap-3">
+        <div className="ml-auto flex md:hidden items-center gap-3">
           {/* Search */}
           <button
             type="button"

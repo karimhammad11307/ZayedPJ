@@ -48,7 +48,7 @@ export default function AdminLogin() {
       <div className="bg-white rounded-card shadow-md p-10 max-w-sm w-full">
         <div className="text-center mb-8 flex flex-col items-center">
           <Image 
-            src="/icon-removebg-preview.png" 
+            src="/zayed-logo.png" 
             alt="Zayed Logo" 
             width={200} 
             height={200} 
