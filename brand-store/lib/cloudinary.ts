@@ -17,25 +17,24 @@
 
 import { v2 as cloudinary } from 'cloudinary'
 
-const CLOUD_NAME  = process.env.CLOUDINARY_CLOUD_NAME
-const API_KEY     = process.env.CLOUDINARY_API_KEY
-const API_SECRET  = process.env.CLOUDINARY_API_SECRET
+function getCloudinary() {
+  const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME
+  const API_KEY = process.env.CLOUDINARY_API_KEY
+  const API_SECRET = process.env.CLOUDINARY_API_SECRET
 
-if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
-  throw new Error(
-    '[cloudinary] Missing one or more Cloudinary environment variables: ' +
-    'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET'
-  )
+  if (CLOUD_NAME && API_KEY && API_SECRET) {
+    cloudinary.config({
+      cloud_name: CLOUD_NAME,
+      api_key: API_KEY,
+      api_secret: API_SECRET,
+      secure: true,
+    })
+  }
+
+  return cloudinary
 }
 
-cloudinary.config({
-  cloud_name: CLOUD_NAME,
-  api_key:    API_KEY,
-  api_secret: API_SECRET,
-  secure:     true, // Always use HTTPS URLs
-})
-
-export default cloudinary
+export default getCloudinary()
 
 /**
  * Generate a signed upload signature for the browser.
@@ -50,17 +49,35 @@ export function generateUploadSignature(folder: string): {
   apiKey: string
   cloudName: string
 } {
+  const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME
+  const API_KEY = process.env.CLOUDINARY_API_KEY
+  const API_SECRET = process.env.CLOUDINARY_API_SECRET
+
+  if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+    throw new Error(
+      '[cloudinary] Missing one or more Cloudinary environment variables: ' +
+      'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET'
+    )
+  }
+
+  cloudinary.config({
+    cloud_name: CLOUD_NAME,
+    api_key: API_KEY,
+    api_secret: API_SECRET,
+    secure: true,
+  })
+
   const timestamp = Math.round(Date.now() / 1000)
 
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder },
-    API_SECRET as string
+    API_SECRET
   )
 
   return {
     signature,
     timestamp,
-    apiKey:    API_KEY as string,
-    cloudName: CLOUD_NAME as string,
+    apiKey: API_KEY,
+    cloudName: CLOUD_NAME,
   }
 }

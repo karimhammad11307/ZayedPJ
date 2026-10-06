@@ -15,15 +15,6 @@
 
 import mongoose, { Mongoose } from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI
-
-if (!MONGODB_URI) {
-  throw new Error(
-    '[mongodb] MONGODB_URI environment variable is not set. ' +
-    'Add it to .env.local or your Vercel project settings.'
-  )
-}
-
 /* ── Global cache to survive hot reloads in dev ── */
 declare global {
   // eslint-disable-next-line no-var
@@ -37,6 +28,15 @@ const cached = global._mongooseCache ?? { conn: null, promise: null }
 global._mongooseCache = cached
 
 async function connectDB(): Promise<Mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI
+
+  if (!MONGODB_URI) {
+    throw new Error(
+      '[mongodb] MONGODB_URI environment variable is not set. ' +
+      'Add it to .env.local or your Vercel project settings.'
+    )
+  }
+
   if (cached.conn) {
     return cached.conn
   }
@@ -44,17 +44,20 @@ async function connectDB(): Promise<Mongoose> {
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      // Principle of least privilege: use a dedicated DB user in Atlas
-      // with readWrite on the single application database only.
+      serverSelectionTimeoutMS: 5000, // Fail fast in 5s instead of hanging for 30s
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 0,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI as string, opts)
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
   }
 
   try {
     cached.conn = await cached.promise
   } catch (err) {
-    // Reset promise so the next call retries
+    // Reset promise so the next call retries clean
     cached.promise = null
     throw err
   }

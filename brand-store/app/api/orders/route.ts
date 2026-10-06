@@ -212,8 +212,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // ── Fire receipt email ──────────────────────────────────────
-    await sendReceiptEmail({
+    // ── Fire receipt email (non-blocking) ──────────────────────
+    void sendReceiptEmail({
       orderId:      String(order._id),
       customerName: order.customerName,
       email:        order.email,
@@ -229,6 +229,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       deliveryFee: order.deliveryFee,
       total:       order.total,
       fulfillment: order.fulfillment,
+    }).catch((err) => {
+      console.error('[POST /api/orders] Background email sending error:', err)
     })
 
     // ── Build WhatsApp URL ──────────────────────────────────────
